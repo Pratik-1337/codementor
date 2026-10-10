@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - CodeMentor</title>
+  <meta name="description" content="Sign in to CodeMentor - Learn to solve DSA problems with progressive AI mentorship.">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <div class="auth-wrapper">
+    <!-- Brand Header -->
+    <header class="brand-header">
+      <a href="index.html" class="brand-logo" aria-label="CodeMentor Home">
+        <span class="brand-badge">&lt;/&gt;</span>
+        <span>CodeMentor</span>
+      </a>
+      <p class="brand-tagline">Learn to solve. <span>Don't just get the answer.</span></p>
+    </header>
+
+    <!-- Login Card -->
+    <main class="auth-card" id="authCard">
+      <h1 class="auth-card-title">Welcome back</h1>
+      <p class="auth-card-subtitle">Sign in to your coding practice account</p>
+
+      <!-- Dynamic Alert Container (for errors or notices) -->
+      <div id="alertContainer" role="alert" aria-live="assertive"></div>
+
+      <!-- Login Form -->
+      <form id="loginForm" novalidate>
+        <!-- Email Field -->
+        <div class="form-group">
+          <label for="email" class="form-label">Email address</label>
+          <div class="input-container">
+            <input 
+              type="email" 
+              id="email" 
+              name="email" 
+              class="form-input" 
+              placeholder="developer@example.com" 
+              autocomplete="email"
+              required 
+            />
+          </div>
+          <span class="form-helper" id="emailError"></span>
+        </div>
+
+        <!-- Password Field -->
+        <div class="form-group">
+          <div class="label-row">
+            <label for="password" class="form-label">Password</label>
+            <a href="forgot-password.html" class="forgot-link">Forgot password?</a>
+          </div>
+          <div class="input-container">
+            <input 
+              type="password" 
+              id="password" 
+              name="password" 
+              class="form-input has-toggle" 
+              placeholder="Enter your password" 
+              autocomplete="current-password"
+              required 
+            />
+            <button 
+              type="button" 
+              id="togglePasswordBtn" 
+              class="password-toggle-btn" 
+              aria-label="Show password" 
+              title="Show password"
+            >👁️</button>
+          </div>
+          <span class="form-helper" id="passwordError"></span>
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit" id="loginBtn" class="btn btn-primary">
+          Log In
+        </button>
+      </form>
+
+      <!-- Card Footer -->
+      <footer class="auth-card-footer">
+        Don't have an account? <a href="register.html">Create account</a>
+      </footer>
+    </main>
+  </div>
+
+  <!-- Vanilla JavaScript Module -->
+  <script type="module" src="js/login.js"></script>
+</body>
+</html>

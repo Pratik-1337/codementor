@@ -1,0 +1,19 @@
+{
+  "name": "codementor",
+  "version": "1.0.0",
+  "description": "CodeMentor - C++ DSA Learning Platform with OpenRouter AI Mentor",
+  "type": "module",
+  "scripts": {
+    "start": "node server/server.js",
+    "dev": "node server/server.js"
+  },
+  "keywords": [
+    "codementor",
+    "cpp",
+    "dsa",
+    "openrouter",
+    "monaco-editor"
+  ],
+  "author": "",
+  "license": "ISC"
+}

@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Two Sum - CodeMentor C++ Workspace</title>
+  <meta name="description" content="Solve DSA problems in C++ with real code execution and contextual AI mentorship.">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* Hide workspace until Firebase auth verifies active session */
+    #problemWorkspace {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Loading State while checking Firebase Auth -->
+  <div id="loadingScreen" class="loading-screen">
+    <div class="spinner"></div>
+    <p style="color: var(--text-secondary); font-family: var(--font-mono); font-size: 13px;">
+      Verifying authentication...
+    </p>
+  </div>
+
+  <!-- Protected Problem Workspace Container -->
+  <div id="problemWorkspace">
+    
+    <!-- Top Navigation Bar -->
+    <header class="dashboard-navbar" style="max-width: 1750px; margin: 0 auto 16px; border-radius: 0 0 var(--radius-lg) var(--radius-lg);">
+      <div style="display: flex; align-items: center;">
+        <a href="dashboard.html" class="brand-logo" aria-label="CodeMentor Home">
+          <span class="brand-badge">&lt;/&gt;</span>
+          <span>CodeMentor</span>
+        </a>
+
+        <!-- Center Navigation Links -->
+        <nav class="nav-center-links">
+          <a href="dashboard.html" class="nav-link">Dashboard</a>
+          <a href="problem.html" class="nav-link active">Problems</a>
+        </nav>
+      </div>
+
+      <!-- User Profile & Logout -->
+      <div class="nav-user-section">
+        <div class="user-badge">
+          <div class="user-avatar" id="userAvatar">U</div>
+          <div class="user-details">
+            <span class="user-name" id="navUserName">Loading...</span>
+            <span class="user-email" id="navUserEmail">loading@codementor.dev</span>
+          </div>
+        </div>
+        <button type="button" id="logoutBtn" class="btn btn-secondary" style="width: auto; padding: 6px 14px; font-size: 12.5px;">
+          Log Out
+        </button>
+      </div>
+    </header>
+
+    <!-- Main 3-Column Workspace Layout -->
+    <main class="workspace-3col-layout">
+      
+      <!-- ==========================================
+           LEFT COLUMN: Problem Statement Panel (26%)
+           ========================================== -->
+      <section class="problem-panel" aria-label="Problem Description">
+        
+        <div class="problem-meta-row">
+          <span class="badge-difficulty-easy">Easy</span>
+          <span style="font-size: 11.5px; color: var(--text-muted); font-family: var(--font-mono);">Problem #1</span>
+        </div>
+
+        <h1 class="problem-title">Two Sum</h1>
+
+        <p class="problem-description">
+          Given an array of integers <code>nums</code> and an integer <code>target</code>, return 
+          <em>the indices of the two numbers such that they add up to <code>target</code></em>.
+        </p>
+
+        <p class="problem-description">
+          You may assume that each input would have <strong>exactly one solution</strong>, and you may not use the same element twice.
+        </p>
+
+        <p class="problem-description">
+          You can return the answer in any order.
+        </p>
+
+        <!-- Example 1 -->
+        <h2 class="problem-section-title">Example 1</h2>
+        <div class="example-card">
+          <div class="example-line"><span class="example-label">Input:</span> <span class="example-val">nums = [2,7,11,15], target = 9</span></div>
+          <div class="example-line"><span class="example-label">Output:</span> <span class="example-val">[0,1]</span></div>
+          <div class="example-line"><span class="example-label">Explanation:</span> <span class="example-val">Because nums[0] + nums[1] == 9, we return [0, 1].</span></div>
+        </div>
+
+        <!-- Example 2 -->
+        <h2 class="problem-section-title">Example 2</h2>
+        <div class="example-card">
+          <div class="example-line"><span class="example-label">Input:</span> <span class="example-val">nums = [3,2,4], target = 6</span></div>
+          <div class="example-line"><span class="example-label">Output:</span> <span class="example-val">[1,2]</span></div>
+        </div>
+
+        <!-- Constraints -->
+        <h2 class="problem-section-title">Constraints</h2>
+        <ul class="constraints-list">
+          <li><code>2 &lt;= nums.length &lt;= 10<sup>4</sup></code></li>
+          <li><code>-10<sup>9</sup> &lt;= nums[i] &lt;= 10<sup>9</sup></code></li>
+          <li><code>-10<sup>9</sup> &lt;= target &lt;= 10<sup>9</sup></code></li>
+          <li>Only one valid answer exists.</li>
+        </ul>
+
+      </section>
+
+      <!-- ==========================================
+           CENTER COLUMN: C++ Editor & Terminal (48%)
+           ========================================== -->
+      <section class="editor-center-panel" aria-label="C++ Code Editor and Terminal">
+        
+        <!-- Editor Header & Toolbar -->
+        <div class="editor-toolbar">
+          <div class="toolbar-left">
+            <span class="language-badge-cpp">
+              <span>⚡</span> C++ (GCC 14)
+            </span>
+
+            <!-- Hint Mode Selector -->
+            <div class="hint-mode-group">
+              <label for="hintModeSelect">Hint Mode:</label>
+              <select id="hintModeSelect" class="hint-mode-select" title="Calibrate guidance detail">
+                <option value="NORMAL" selected>NORMAL</option>
+                <option value="HARD">HARD</option>
+                <option value="EASY">EASY</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="toolbar-right">
+            <button type="button" id="resetBtn" class="btn-reset" title="Restore original C++ starter code">
+              <span>↺</span> Reset
+            </button>
+            <button type="button" id="getHintBtn" class="btn-get-hint" title="Ask AI for progressive guidance">
+              <span>💡</span> Get Hint
+            </button>
+            <button type="button" id="runCodeBtn" class="btn-run" title="Compile and run C++ code">
+              <span>▶</span> Run Code
+            </button>
+            <button type="button" id="submitBtn" class="btn-submit" title="Submit code against all test cases">
+              <span>🚀</span> Submit
+            </button>
+          </div>
+        </div>
+
+        <!-- Monaco C++ Editor Container -->
+        <div class="editor-wrapper">
+          <div class="editor-header-tab">
+            <span class="editor-tab-active">
+              <span>&lt;/&gt;</span>
+              <span>solution.cpp</span>
+            </span>
+            <span style="font-size: 11px; color: var(--text-muted); margin-left: auto;">Monaco C++</span>
+          </div>
+          <div id="editorContainer"></div>
+        </div>
+
+        <!-- Custom Input (stdin) Card -->
+        <div class="custom-input-card">
+          <div class="custom-input-header">
+            <span>Custom Input (stdin)</span>
+            <span style="font-weight: normal; color: var(--text-muted);">Passed to std::cin</span>
+          </div>
+          <textarea 
+            id="customStdinInput" 
+            class="custom-stdin-textarea" 
+            placeholder="Enter custom input for cin (e.g. 2 7 11 15)"
+            rows="2"
+          ></textarea>
+        </div>
+
+        <!-- Terminal Output Panel -->
+        <div class="terminal-panel">
+          <div class="terminal-header">
+            <div class="terminal-title-group">
+              <span>💻</span>
+              <span>TERMINAL</span>
+              <span id="terminalStatus" class="status-pill status-ready">Ready</span>
+            </div>
+            <button type="button" id="clearTerminalBtn" class="btn-clear-terminal" title="Clear terminal output">
+              Clear
+            </button>
+          </div>
+          <pre id="terminalConsole" class="terminal-console">$ Ready to compile and execute C++. Click 'Run Code' or 'Submit'.</pre>
+        </div>
+
+      </section>
+
+      <!-- ==========================================
+           RIGHT COLUMN: AI Mentor Sidebar (26%)
+           ========================================== -->
+      <aside class="ai-sidebar-panel" aria-label="AI Mentor Assistant">
+        
+        <!-- Sidebar Header -->
+        <div class="ai-sidebar-header">
+          <div class="ai-sidebar-title">
+            <span class="ai-status-indicator"></span>
+            <span>🤖 AI Mentor</span>
+          </div>
+          <button type="button" id="clearChatBtn" class="btn-clear-chat" title="Clear chat history">
+            Clear Chat
+          </button>
+        </div>
+
+        <!-- Dynamic Progressive Hint Card (Appears when Get Hint is requested) -->
+        <div id="progressiveHintCard" class="progressive-hint-card">
+          <div class="hint-card-header">
+            <span id="hintCardLevel" class="hint-card-level">Hint Level 1 (NORMAL)</span>
+            <button type="button" id="nextHintBtn" class="btn-next-hint">Next Hint →</button>
+          </div>
+          <div id="hintCardText" class="hint-card-text"></div>
+        </div>
+
+        <!-- Scrollable Chat Stream -->
+        <div id="chatMessagesContainer" class="chat-messages-container">
+          
+          <!-- Default Welcome Message from AI Mentor -->
+          <div class="chat-message-row ai">
+            <span class="chat-sender-label">AI MENTOR</span>
+            <div class="chat-bubble">
+              Hello! I am your <strong>CodeMentor AI</strong>.
+              <br><br>
+              I inspect your <strong>actual C++ code</strong> and terminal diagnostics in real time. Ask me why you have a logic bug, how to fix compiler errors, or how to optimize your time complexity!
+            </div>
+          </div>
+
+          <!-- Thinking Indicator Pill -->
+          <div id="aiThinkingRow" class="ai-thinking-row">
+            <div class="ai-pulse-dot"></div>
+            <span>AI is analyzing your C++ code...</span>
+          </div>
+
+        </div>
+
+        <!-- Chat Input Footer -->
+        <div class="chat-input-footer">
+          <div class="chat-input-row">
+            <textarea 
+              id="chatInput" 
+              class="chat-textarea" 
+              placeholder="Ask about your code, errors, or algorithm..."
+              rows="2"
+            ></textarea>
+            <button type="button" id="sendChatBtn" class="btn-send-chat" title="Send message to AI Mentor">
+              Send
+            </button>
+          </div>
+          <span class="chat-shortcut-hint">Press <strong>Enter</strong> to send, <strong>Shift + Enter</strong> for newline</span>
+        </div>
+
+      </aside>
+
+    </main>
+
+  </div>
+
+  <!-- Monaco Editor AMD Loader from CDN (no npm required) -->
+  <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/loader.js"></script>
+
+  <!-- Problem Workspace Modular Vanilla JavaScript -->
+  <script type="module" src="js/workspace.js"></script>
+</body>
+</html>

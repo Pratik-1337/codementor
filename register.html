@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Account - CodeMentor</title>
+  <meta name="description" content="Register for CodeMentor - Master DSA and coding interviews with progressive AI hints.">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <div class="auth-wrapper">
+    <!-- Brand Header -->
+    <header class="brand-header">
+      <a href="index.html" class="brand-logo" aria-label="CodeMentor Home">
+        <span class="brand-badge">&lt;/&gt;</span>
+        <span>CodeMentor</span>
+      </a>
+      <p class="brand-tagline">Learn to solve. <span>Don't just get the answer.</span></p>
+    </header>
+
+    <!-- Registration Card -->
+    <main class="auth-card" id="authCard">
+      <h1 class="auth-card-title">Create your account</h1>
+      <p class="auth-card-subtitle">Join CodeMentor to level up your problem-solving skills</p>
+
+      <!-- Alert Container -->
+      <div id="alertContainer" role="alert" aria-live="assertive"></div>
+
+      <!-- Registration Form -->
+      <form id="registerForm" novalidate>
+        
+        <!-- Full Name -->
+        <div class="form-group">
+          <label for="fullName" class="form-label">Full Name</label>
+          <div class="input-container">
+            <input 
+              type="text" 
+              id="fullName" 
+              name="fullName" 
+              class="form-input" 
+              placeholder="e.g. Alan Turing" 
+              autocomplete="name"
+              required 
+            />
+          </div>
+          <span class="form-helper" id="fullNameError"></span>
+        </div>
+
+        <!-- Username -->
+        <div class="form-group">
+          <label for="username" class="form-label">Username</label>
+          <div class="input-container">
+            <input 
+              type="text" 
+              id="username" 
+              name="username" 
+              class="form-input" 
+              placeholder="e.g. alanturing" 
+              autocomplete="username"
+              required 
+            />
+          </div>
+          <span class="form-helper" id="usernameError"></span>
+        </div>
+
+        <!-- Email -->
+        <div class="form-group">
+          <label for="email" class="form-label">Email address</label>
+          <div class="input-container">
+            <input 
+              type="email" 
+              id="email" 
+              name="email" 
+              class="form-input" 
+              placeholder="developer@example.com" 
+              autocomplete="email"
+              required 
+            />
+          </div>
+          <span class="form-helper" id="emailError"></span>
+        </div>
+
+        <!-- Password -->
+        <div class="form-group">
+          <label for="password" class="form-label">Password</label>
+          <div class="input-container">
+            <input 
+              type="password" 
+              id="password" 
+              name="password" 
+              class="form-input has-toggle" 
+              placeholder="Create a strong password" 
+              autocomplete="new-password"
+              required 
+            />
+            <button 
+              type="button" 
+              id="togglePasswordBtn" 
+              class="password-toggle-btn" 
+              aria-label="Show password" 
+              title="Show password"
+            >👁️</button>
+          </div>
+          <span class="form-helper" id="passwordError"></span>
+
+          <!-- Password Requirements Checklist (Updates Live) -->
+          <div class="requirements-box" id="requirementsBox">
+            <div class="requirements-title">Password Requirements</div>
+            <ul class="requirements-list">
+              <li class="req-item invalid" id="req-length">
+                <span class="req-icon">✗</span>
+                <span>At least 8 characters</span>
+              </li>
+              <li class="req-item invalid" id="req-upper">
+                <span class="req-icon">✗</span>
+                <span>One uppercase letter</span>
+              </li>
+              <li class="req-item invalid" id="req-number">
+                <span class="req-icon">✗</span>
+                <span>One number</span>
+              </li>
+              <li class="req-item invalid" id="req-special">
+                <span class="req-icon">✗</span>
+                <span>One special character</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Password Strength Indicator (Updates Live) -->
+          <div class="strength-meter-container" id="strengthMeter">
+            <div class="strength-header">
+              <span>Password Strength</span>
+              <span class="strength-label" id="strengthLabel">None</span>
+            </div>
+            <div class="strength-bars" id="strengthBars">
+              <div class="strength-bar"></div>
+              <div class="strength-bar"></div>
+              <div class="strength-bar"></div>
+              <div class="strength-bar"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Confirm Password -->
+        <div class="form-group">
+          <label for="confirmPassword" class="form-label">Confirm Password</label>
+          <div class="input-container">
+            <input 
+              type="password" 
+              id="confirmPassword" 
+              name="confirmPassword" 
+              class="form-input has-toggle" 
+              placeholder="Re-enter your password" 
+              autocomplete="new-password"
+              required 
+            />
+            <button 
+              type="button" 
+              id="toggleConfirmPasswordBtn" 
+              class="password-toggle-btn" 
+              aria-label="Show confirm password" 
+              title="Show confirm password"
+            >👁️</button>
+          </div>
+          <!-- Live Match Status Indicator -->
+          <div class="match-status" id="matchStatus"></div>
+          <span class="form-helper" id="confirmPasswordError"></span>
+        </div>
+
+        <!-- Submit Button (Disabled until all conditions are satisfied) -->
+        <button type="submit" id="registerBtn" class="btn btn-primary" disabled>
+          Create Account
+        </button>
+      </form>
+
+      <!-- Footer Link -->
+      <footer class="auth-card-footer">
+        Already have an account? <a href="login.html">Log in</a>
+      </footer>
+    </main>
+  </div>
+
+  <!-- Vanilla JavaScript Module -->
+  <script type="module" src="js/register.js"></script>
+</body>
+</html>

@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CodeMentor - Learn to solve. Don't just get the answer.</title>
+  <meta name="description" content="CodeMentor is a web-based coding and DSA practice platform featuring progressive AI mentorship.">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Landing Navigation Bar -->
+  <header class="landing-navbar">
+    <a href="index.html" class="brand-logo" aria-label="CodeMentor Home">
+      <span class="brand-badge">&lt;/&gt;</span>
+      <span>CodeMentor</span>
+    </a>
+    <nav class="landing-nav-links">
+      <a href="login.html" class="btn btn-secondary" style="width: auto; padding: 8px 16px;">Log In</a>
+      <a href="register.html" class="btn btn-primary" style="width: auto; padding: 8px 16px;">Create Account</a>
+    </nav>
+  </header>
+
+  <!-- Hero Section -->
+  <main class="hero-section">
+    <div class="hero-pill">
+      <span>💡</span> Progressive AI Coding Mentor
+    </div>
+    
+    <h1 class="hero-title">
+      Learn to solve.<br>
+      <span class="hero-title-highlight">Don't just get the answer.</span>
+    </h1>
+
+    <p class="hero-subtitle">
+      CodeMentor is a web-based DSA and programming practice platform. Instead of spoiling solutions, 
+      our AI mentor guides you step-by-step through algorithmic intuition, data structures, and edge cases.
+    </p>
+
+    <div class="hero-cta-group">
+      <a href="register.html" class="btn btn-primary" style="width: auto; padding: 12px 28px; font-size: 15px;">
+        Start Practicing Free →
+      </a>
+      <a href="login.html" class="btn btn-secondary" style="width: auto; padding: 12px 24px; font-size: 15px;">
+        Sign In to Workspace
+      </a>
+    </div>
+
+    <!-- Auth State Alert (dynamically populated if user is already logged in) -->
+    <div id="sessionBanner" style="max-width: 500px; margin: 24px auto 0;"></div>
+  </main>
+
+  <!-- Feature Grid Section -->
+  <section class="dashboard-container" style="padding-top: 0;">
+    <h2 class="features-section-title" style="justify-content: center; margin-bottom: 24px;">
+      Platform Features & Architecture
+    </h2>
+
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-header">
+          <span class="feature-icon">🔐</span>
+          <span class="badge-coming-soon" style="background-color: var(--success-bg); border-color: var(--success-border); color: var(--success);">Active</span>
+        </div>
+        <h3 class="feature-title">Secure Authentication</h3>
+        <p class="feature-description">
+          Powered by Firebase Auth. Includes live client-side validation, password strength analysis, and Firestore profile storage.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-header">
+          <span class="feature-icon">🧩</span>
+          <span class="badge-coming-soon" style="background-color: var(--success-bg); border-color: var(--success-border); color: var(--success);">Active</span>
+        </div>
+        <h3 class="feature-title">DSA Problem System</h3>
+        <p class="feature-description">
+          Practice problems with detailed problem statements, test examples, and algorithmic constraints.
+        </p>
+        <div style="margin-top: 12px;">
+          <a href="problem.html" style="font-size: 13px; font-weight: 600;">Explore Problems →</a>
+        </div>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-header">
+          <span class="feature-icon">💻</span>
+          <span class="badge-coming-soon" style="background-color: var(--success-bg); border-color: var(--success-border); color: var(--success);">Active</span>
+        </div>
+        <h3 class="feature-title">Monaco Code Editor</h3>
+        <p class="feature-description">
+          Integrated developer editor with syntax highlighting, automatic layout, and multi-language support (C++, Java, Python, JavaScript).
+        </p>
+        <div style="margin-top: 12px;">
+          <a href="problem.html" style="font-size: 13px; font-weight: 600;">Open Editor →</a>
+        </div>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-header">
+          <span class="feature-icon">🤖</span>
+          <span class="badge-coming-soon" style="background-color: var(--success-bg); border-color: var(--success-border); color: var(--success);">Active</span>
+        </div>
+        <h3 class="feature-title">AI Hint Mentor</h3>
+        <p class="feature-description">
+          Ask questions about time complexity, logic errors, or algorithms, and receive hints calibrated to your chosen difficulty mode.
+        </p>
+        <div style="margin-top: 12px;">
+          <a href="problem.html" style="font-size: 13px; font-weight: 600;">Try AI Mentor →</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5-Stage Hint Philosophy Preview -->
+    <div class="hint-roadmap-box" style="margin-top: 32px;">
+      <h2 class="hint-roadmap-title">🧠 The 5-Stage Progressive Hint Concept</h2>
+      <p class="hint-roadmap-subtitle">
+        When students get stuck on a DSA problem, standard AI chatbots output full code solutions instantly—destroying learning intuition. 
+        CodeMentor breaks this cycle with progressive unlocks:
+      </p>
+
+      <div class="hint-stages">
+        <div class="hint-stage-item">
+          <div class="stage-number">Stage 01</div>
+          <div class="stage-name">Conceptual Hint</div>
+          <div class="stage-desc">"Think about what information you need to remember while traversing the array."</div>
+        </div>
+
+        <div class="hint-stage-item">
+          <div class="stage-number">Stage 02</div>
+          <div class="stage-name">Specific Direction</div>
+          <div class="stage-desc">"Consider whether a hash map could help you remember values you have already seen."</div>
+        </div>
+
+        <div class="hint-stage-item">
+          <div class="stage-number">Stage 03</div>
+          <div class="stage-name">Algorithm / DS</div>
+          <div class="stage-desc">Explanation of the complementary lookup pattern and space-time tradeoff.</div>
+        </div>
+
+        <div class="hint-stage-item">
+          <div class="stage-number">Stage 04</div>
+          <div class="stage-name">Pseudocode</div>
+          <div class="stage-desc">High-level logical blueprint showing loop structure and lookup checks.</div>
+        </div>
+
+        <div class="hint-stage-item">
+          <div class="stage-number">Stage 05</div>
+          <div class="stage-name">Detailed Guidance</div>
+          <div class="stage-desc">In-depth edge case handling, boundary checks, and complexity verification.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer style="text-align: center; margin-top: 48px; padding: 24px 0; border-top: 1px solid var(--border-subtle); color: var(--text-muted); font-size: 13px;">
+      CodeMentor &copy; 2026 &bull; Computer Science Mini-Project &bull; Built with HTML, CSS, Vanilla JS & Firebase
+    </footer>
+  </section>
+
+  <!-- Check if already logged in to offer direct dashboard jump -->
+  <script type="module">
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { auth } from "./js/firebase-config.js";
+
+    const sessionBanner = document.getElementById("sessionBanner");
+    onAuthStateChanged(auth, (user) => {
+      if (user && sessionBanner) {
+        sessionBanner.innerHTML = `
+          <div class="alert alert-info" style="text-align: left;">
+            <span class="alert-icon">👤</span>
+            <div>
+              You are signed in as <strong>${user.displayName || user.email}</strong>. 
+              <a href="dashboard.html" style="font-weight: 600; margin-left: 6px;">Go to Dashboard →</a>
+            </div>
+          </div>
+        `;
+      }
+    });
+  </script>
+</body>
+</html>
