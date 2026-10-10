@@ -65,48 +65,50 @@
       <section class="problem-panel" aria-label="Problem Description">
         
         <div class="problem-meta-row">
-          <span class="badge-difficulty-easy">Easy</span>
-          <span style="font-size: 11.5px; color: var(--text-muted); font-family: var(--font-mono);">Problem #1</span>
+          <span id="problemDifficultyBadge" class="badge-difficulty-easy">Easy</span>
+          <span id="problemNumberLabel" style="font-size: 11.5px; color: var(--text-muted); font-family: var(--font-mono);">Problem #1</span>
         </div>
 
-        <h1 class="problem-title">Two Sum</h1>
+        <h1 id="problemTitleHeader" class="problem-title">Two Sum</h1>
 
-        <p class="problem-description">
-          Given an array of integers <code>nums</code> and an integer <code>target</code>, return 
-          <em>the indices of the two numbers such that they add up to <code>target</code></em>.
-        </p>
+        <div id="problemContentContainer">
+          <p class="problem-description">
+            Given an array of integers <code>nums</code> and an integer <code>target</code>, return 
+            <em>the indices of the two numbers such that they add up to <code>target</code></em>.
+          </p>
 
-        <p class="problem-description">
-          You may assume that each input would have <strong>exactly one solution</strong>, and you may not use the same element twice.
-        </p>
+          <p class="problem-description">
+            You may assume that each input would have <strong>exactly one solution</strong>, and you may not use the same element twice.
+          </p>
 
-        <p class="problem-description">
-          You can return the answer in any order.
-        </p>
+          <p class="problem-description">
+            You can return the answer in any order.
+          </p>
 
-        <!-- Example 1 -->
-        <h2 class="problem-section-title">Example 1</h2>
-        <div class="example-card">
-          <div class="example-line"><span class="example-label">Input:</span> <span class="example-val">nums = [2,7,11,15], target = 9</span></div>
-          <div class="example-line"><span class="example-label">Output:</span> <span class="example-val">[0,1]</span></div>
-          <div class="example-line"><span class="example-label">Explanation:</span> <span class="example-val">Because nums[0] + nums[1] == 9, we return [0, 1].</span></div>
+          <!-- Example 1 -->
+          <h2 class="problem-section-title">Example 1</h2>
+          <div class="example-card">
+            <div class="example-line"><span class="example-label">Input:</span> <span class="example-val">nums = [2,7,11,15], target = 9</span></div>
+            <div class="example-line"><span class="example-val">Output:</span> <span class="example-val">[0,1]</span></div>
+            <div class="example-line"><span class="example-label">Explanation:</span> <span class="example-val">Because nums[0] + nums[1] == 9, we return [0, 1].</span></div>
+          </div>
+
+          <!-- Example 2 -->
+          <h2 class="problem-section-title">Example 2</h2>
+          <div class="example-card">
+            <div class="example-line"><span class="example-label">Input:</span> <span class="example-val">nums = [3,2,4], target = 6</span></div>
+            <div class="example-line"><span class="example-label">Output:</span> <span class="example-val">[1,2]</span></div>
+          </div>
+
+          <!-- Constraints -->
+          <h2 class="problem-section-title">Constraints</h2>
+          <ul class="constraints-list">
+            <li><code>2 &lt;= nums.length &lt;= 10<sup>4</sup></code></li>
+            <li><code>-10<sup>9</sup> &lt;= nums[i] &lt;= 10<sup>9</sup></code></li>
+            <li><code>-10<sup>9</sup> &lt;= target &lt;= 10<sup>9</sup></code></li>
+            <li>Only one valid answer exists.</li>
+          </ul>
         </div>
-
-        <!-- Example 2 -->
-        <h2 class="problem-section-title">Example 2</h2>
-        <div class="example-card">
-          <div class="example-line"><span class="example-label">Input:</span> <span class="example-val">nums = [3,2,4], target = 6</span></div>
-          <div class="example-line"><span class="example-label">Output:</span> <span class="example-val">[1,2]</span></div>
-        </div>
-
-        <!-- Constraints -->
-        <h2 class="problem-section-title">Constraints</h2>
-        <ul class="constraints-list">
-          <li><code>2 &lt;= nums.length &lt;= 10<sup>4</sup></code></li>
-          <li><code>-10<sup>9</sup> &lt;= nums[i] &lt;= 10<sup>9</sup></code></li>
-          <li><code>-10<sup>9</sup> &lt;= target &lt;= 10<sup>9</sup></code></li>
-          <li>Only one valid answer exists.</li>
-        </ul>
 
       </section>
 
@@ -121,6 +123,13 @@
             <span class="language-badge-cpp">
               <span>⚡</span> C++ (GCC 14)
             </span>
+
+            <!-- Problem Selector Dropdown -->
+            <select id="problemSelector" class="problem-selector" title="Switch DSA problem">
+              <option value="1">1. Two Sum (Easy)</option>
+              <option value="2">2. Container With Most Water (Medium)</option>
+              <option value="3">3. Trapping Rain Water (Hard)</option>
+            </select>
 
             <!-- Hint Mode Selector -->
             <div class="hint-mode-group">

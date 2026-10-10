@@ -155,7 +155,21 @@ http://localhost:3000
    - Runtime errors (`stderr`)
    - Standard output (`stdout`)
    - Execution time (`executionTime` in seconds)
-4. **Test Suite Submission**: When clicking **Submit**, [`js/execution.js`](js/execution.js) executes the code against predefined test cases and returns a clear verdict: `Accepted`, `Wrong Answer`, `Time Limit Exceeded`, `Compilation Error`, or `Runtime Error`.
+4. **Test Suite Submission**: When clicking **Submit**, [`js/execution.js`](js/execution.js) executes the code against predefined test cases for the selected problem and returns a clear verdict: `Accepted`, `Wrong Answer`, `Time Limit Exceeded`, `Compilation Error`, or `Runtime Error`.
+
+---
+
+## 🧩 Curated DSA Problems Catalog
+
+CodeMentor includes three classic, universally recognized DSA interview questions covering Easy, Medium, and Hard difficulties:
+
+| # | Problem Title | Difficulty | Topics & Patterns | Primary Algorithmic Technique |
+| :---: | :--- | :---: | :--- | :--- |
+| **1** | **Two Sum** | `Easy` | Arrays &middot; Hash Map | Complementary hash map lookup in $O(N)$ time, $O(N)$ space. |
+| **2** | **Container With Most Water** | `Medium` | Two Pointers &middot; Array &middot; Greedy | Two-pointer inward traversal moving the shorter line in $O(N)$ time, $O(1)$ space. |
+| **3** | **Trapping Rain Water** | `Hard` | Two Pointers &middot; Dynamic Programming &middot; Stack | Two-pointer elevation boundary tracking (`left_max` and `right_max`) in $O(N)$ time, $O(1)$ space. |
+
+Students can switch between problems dynamically using the toolbar dropdown in the workspace or by selecting any problem from the dashboard. Each problem maintains its own independent code state in `localStorage` and provides calibrated 5-stage progressive hints.
 
 ---
 

@@ -5,11 +5,12 @@
  * 
  * Coordinates the 3-column C++ learning workspace:
  * 1. Authentication check & user profile header
- * 2. Monaco C++ Editor initialization & state
- * 3. Remote C++ compilation & execution (Run Code via Wandbox)
- * 4. Test case evaluation & verdict banner (Submit Solution)
- * 5. Progressive Hint System (Single-level unlocks: 1 to 5, HARD/NORMAL/EASY)
- * 6. Context-Aware AI Mentor Chat (analyzes live C++ code & terminal output)
+ * 2. Problem selection & dynamic switching (Easy, Medium, Hard)
+ * 3. Monaco C++ Editor initialization & per-problem code state
+ * 4. Remote C++ compilation & execution (Run Code via Wandbox)
+ * 5. Test case evaluation & verdict banner (Submit Solution)
+ * 6. Progressive Hint System (Single-level unlocks: 1 to 5, HARD/NORMAL/EASY)
+ * 7. Context-Aware AI Mentor Chat (analyzes live C++ code & terminal output)
  * ==============================================================================
  */
 
@@ -17,9 +18,13 @@ import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/f
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { auth, db } from "./firebase-config.js";
 import { logoutUser } from "./auth.js";
-import { initCppEditor, getCppCode, resetCppCode, STARTER_CPP_CODE } from "./editor.js";
-import { executeCppCode, submitTwoSumSolution } from "./execution.js";
+import { initCppEditor, getCppCode, setCppCode } from "./editor.js";
+import { executeCppCode, submitSolution } from "./execution.js";
 import { sendChatMessage, requestProgressiveHint } from "./ai.js";
+import { PROBLEMS } from "./problems-data.js";
+import { trackProblemProgress } from "./progress.js";
+
+export { PROBLEMS };
 
 // DOM Elements: Navigation & Auth
 const loadingScreen = document.getElementById("loadingScreen");
@@ -28,6 +33,13 @@ const navUserName = document.getElementById("navUserName");
 const navUserEmail = document.getElementById("navUserEmail");
 const userAvatar = document.getElementById("userAvatar");
 const logoutBtn = document.getElementById("logoutBtn");
+
+// DOM Elements: Problem Left Panel
+const problemSelector = document.getElementById("problemSelector");
+const problemDifficultyBadge = document.getElementById("problemDifficultyBadge");
+const problemNumberLabel = document.getElementById("problemNumberLabel");
+const problemTitleHeader = document.getElementById("problemTitleHeader");
+const problemContentContainer = document.getElementById("problemContentContainer");
 
 // DOM Elements: Editor Toolbar & Controls
 const hintModeSelect = document.getElementById("hintModeSelect");
@@ -54,32 +66,108 @@ const aiThinkingRow = document.getElementById("aiThinkingRow");
 const chatInput = document.getElementById("chatInput");
 const sendChatBtn = document.getElementById("sendChatBtn");
 
-// Problem Definition
-const PROBLEM_TITLE = "Two Sum";
-const PROBLEM_STATEMENT = `Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.
-Assume exactly one valid solution exists. You may not use the same element twice.
-Constraints: 2 <= nums.length <= 10^4, -10^9 <= nums[i] <= 10^9, -10^9 <= target <= 10^9`;
-
-// Workspace State
+// Active State
+let currentUser = null;
+let currentProblem = PROBLEMS[0];
 let currentHintLevel = 1;
 let latestTerminalOutput = "";
 const chatHistory = [];
 let isAiBusy = false;
+
+/**
+ * Loads problem by ID and updates the workspace UI
+ */
+function loadProblem(problemId, updateUrl = true) {
+  const p = PROBLEMS.find(item => item.id === Number(problemId)) || PROBLEMS[0];
+  currentProblem = p;
+
+  if (updateUrl) {
+    const newUrl = `${window.location.pathname}?id=${p.id}`;
+    window.history.pushState({ problemId: p.id }, "", newUrl);
+  }
+
+  // Update Left Panel
+  if (problemDifficultyBadge) {
+    problemDifficultyBadge.textContent = p.difficulty;
+    problemDifficultyBadge.className = p.difficultyClass;
+  }
+  if (problemNumberLabel) {
+    problemNumberLabel.textContent = `Problem #${p.id}`;
+  }
+  if (problemTitleHeader) {
+    problemTitleHeader.textContent = p.title;
+  }
+  if (problemSelector) {
+    problemSelector.value = p.id;
+  }
+
+  if (problemContentContainer) {
+    let html = `<p class="problem-description">${p.statement}</p>`;
+
+    p.examples.forEach((ex, idx) => {
+      html += `
+        <h2 class="problem-section-title">Example ${idx + 1}</h2>
+        <div class="example-card">
+          <div class="example-line"><span class="example-label">Input:</span> <span class="example-val">${ex.input}</span></div>
+          <div class="example-line"><span class="example-label">Output:</span> <span class="example-val">${ex.output}</span></div>
+          ${ex.explanation ? `<div class="example-line"><span class="example-label">Explanation:</span> <span class="example-val">${ex.explanation}</span></div>` : ""}
+        </div>
+      `;
+    });
+
+    html += `<h2 class="problem-section-title">Constraints</h2><ul class="constraints-list">`;
+    p.constraints.forEach(c => {
+      html += `<li><code>${c}</code></li>`;
+    });
+    html += `</ul>`;
+
+    problemContentContainer.innerHTML = html;
+  }
+
+  // Update Monaco Code
+  const storageKey = `codementor_code_cpp_p${p.id}`;
+  const savedCode = localStorage.getItem(storageKey);
+  const codeToLoad = savedCode || p.starterCode;
+  setCppCode(codeToLoad);
+
+  // Update stdin
+  if (customStdinInput) {
+    customStdinInput.value = p.defaultStdin;
+  }
+
+  // Reset hints & terminal
+  currentHintLevel = 1;
+  if (progressiveHintCard) {
+    progressiveHintCard.classList.remove("is-visible");
+  }
+  if (hintCardText) hintCardText.textContent = "";
+  if (hintCardLevel) hintCardLevel.textContent = `Hint Level 1 (${hintModeSelect ? hintModeSelect.value : "NORMAL"})`;
+
+  if (terminalStatus) {
+    terminalStatus.textContent = "Ready";
+    terminalStatus.className = "status-pill status-ready";
+  }
+  if (terminalConsole) {
+    terminalConsole.textContent = `$ Ready to compile and execute C++ for Problem ${p.id} (${p.title}). Click 'Run Code' or 'Submit'.`;
+  }
+  latestTerminalOutput = "";
+}
 
 /* ==============================================================================
    WORKFLOW 2: Authentication Protection & User Profile
    ============================================================================== */
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
-    // Unauthenticated visitors are immediately redirected to login
+    currentUser = null;
     window.location.replace("login.html");
     return;
   }
 
+  currentUser = user;
+
   let displayName = user.displayName || user.email.split("@")[0];
   let email = user.email || "";
 
-  // Fetch saved username/profile from Cloud Firestore
   try {
     const userDocRef = doc(db, "users", user.uid);
     const userDocSnap = await getDoc(userDocRef);
@@ -93,22 +181,44 @@ onAuthStateChanged(auth, async (user) => {
     console.warn("Firestore profile read notice:", err);
   }
 
-  // Populate header profile
-  navUserName.textContent = displayName;
-  navUserEmail.textContent = email;
-  userAvatar.textContent = displayName.charAt(0).toUpperCase();
+  if (navUserName) navUserName.textContent = displayName;
+  if (navUserEmail) navUserEmail.textContent = email;
+  if (userAvatar) userAvatar.textContent = displayName.charAt(0).toUpperCase();
 
-  // Show protected workspace and hide loading spinner
+  // Show workspace
   loadingScreen.style.display = "none";
   problemWorkspace.style.display = "block";
 
-  // Initialize Monaco C++ editor once DOM is visible
-  initCppEditor("editorContainer");
+  // Check URL query parameter (?id=1, ?id=2, ?id=3)
+  const urlParams = new URLSearchParams(window.location.search);
+  const requestedId = parseInt(urlParams.get("id"), 10) || 1;
+
+  // Initialize Monaco Editor with change persistence
+  initCppEditor("editorContainer", (newCode) => {
+    localStorage.setItem(`codementor_code_cpp_p${currentProblem.id}`, newCode);
+  });
+
+  // Load problem content
+  loadProblem(requestedId, false);
 });
 
 if (logoutBtn) {
   logoutBtn.addEventListener("click", logoutUser);
 }
+
+// Problem Selector Dropdown
+if (problemSelector) {
+  problemSelector.addEventListener("change", (e) => {
+    loadProblem(e.target.value, true);
+  });
+}
+
+// Support browser back/forward buttons
+window.addEventListener("popstate", (e) => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const id = parseInt(urlParams.get("id"), 10) || 1;
+  loadProblem(id, false);
+});
 
 /* ==============================================================================
    WORKFLOW 3: Real C++ Code Execution (Run Code via Wandbox)
@@ -129,6 +239,11 @@ runCodeBtn.addEventListener("click", async () => {
 
   const result = await executeCppCode(code, stdin);
   runCodeBtn.disabled = false;
+
+  // Track problem attempt (only counted on actual code execution)
+  if (currentUser) {
+    trackProblemProgress(currentUser.uid, currentProblem.id, { attempted: true });
+  }
 
   if (result.isApiError) {
     terminalStatus.textContent = "Execution/API Error";
@@ -184,10 +299,19 @@ submitBtn.addEventListener("click", async () => {
   terminalStatus.textContent = "Running";
   terminalStatus.className = "status-pill status-running";
   submitBtn.disabled = true;
-  terminalConsole.textContent = `$ Compiling and executing against test cases...`;
+  terminalConsole.textContent = `$ Compiling and executing against test suite for Problem ${currentProblem.id} (${currentProblem.title})...`;
 
-  const testResult = await submitTwoSumSolution(code);
+  const testResult = await submitSolution(currentProblem.id, code);
   submitBtn.disabled = false;
+
+  // Track problem submission and verdict (genuine Accepted marks solved)
+  if (currentUser) {
+    const isAccepted = testResult.verdict === "Accepted";
+    trackProblemProgress(currentUser.uid, currentProblem.id, {
+      attempted: true,
+      solved: isAccepted
+    });
+  }
 
   terminalStatus.textContent = testResult.verdict;
   if (testResult.verdict === "Accepted") {
@@ -201,6 +325,7 @@ submitBtn.addEventListener("click", async () => {
   const banner = 
 `============================================================
 SUBMISSION VERDICT: ${testResult.verdict.toUpperCase()}
+Problem:            #${currentProblem.id} - ${currentProblem.title}
 Execution Time:     ${testResult.executionTime}s
 ============================================================
 
@@ -215,23 +340,23 @@ ${testResult.details}`;
    ============================================================================== */
 resetBtn.addEventListener("click", () => {
   const current = getCppCode().trim();
-  if (current && current !== STARTER_CPP_CODE.trim()) {
-    if (!confirm("Are you sure you want to reset your C++ code to the default starter template?")) {
+  if (current && current !== currentProblem.starterCode.trim()) {
+    if (!confirm(`Are you sure you want to reset your C++ code to the starter template for ${currentProblem.title}?`)) {
       return;
     }
   }
 
-  resetCppCode();
-  customStdinInput.value = "";
+  setCppCode(currentProblem.starterCode);
+  customStdinInput.value = currentProblem.defaultStdin;
   terminalStatus.textContent = "Ready";
   terminalStatus.className = "status-pill status-ready";
-  terminalConsole.textContent = "$ Editor and terminal reset to default starter template.";
+  terminalConsole.textContent = `$ Editor and terminal reset to starter template for ${currentProblem.title}.`;
 
   // Reset hints
   currentHintLevel = 1;
   progressiveHintCard.classList.remove("is-visible");
   hintCardText.textContent = "";
-  hintCardLevel.textContent = "Hint Level 1 (NORMAL)";
+  hintCardLevel.textContent = `Hint Level 1 (${hintModeSelect.value})`;
 });
 
 clearTerminalBtn.addEventListener("click", () => {
@@ -262,7 +387,7 @@ async function triggerProgressiveHint(level) {
 
   const mode = hintModeSelect.value;
   hintCardLevel.textContent = `Hint Level ${level} of 5 (${mode})`;
-  hintCardText.textContent = `AI is analyzing your current C++ code and preparing Hint Level ${level}...`;
+  hintCardText.textContent = `AI is analyzing your C++ code for ${currentProblem.title} and preparing Hint Level ${level}...`;
   progressiveHintCard.classList.add("is-visible");
 
   setAiBusyState(true);
@@ -270,8 +395,8 @@ async function triggerProgressiveHint(level) {
   try {
     const hint = await requestProgressiveHint({
       currentCode: getCppCode(),
-      problemTitle: PROBLEM_TITLE,
-      problemStatement: PROBLEM_STATEMENT,
+      problemTitle: currentProblem.title,
+      problemStatement: currentProblem.statement.replace(/<[^>]+>/g, ""),
       terminalOutput: latestTerminalOutput,
       hintMode: mode,
       hintLevel: level,
@@ -280,22 +405,20 @@ async function triggerProgressiveHint(level) {
 
     hintCardText.textContent = hint;
 
-    // Add hint to chat context so student can ask follow-up questions
+    // Add hint to chat context
     chatHistory.push({
       role: "assistant",
-      text: `[Progressive Hint Level ${level} - ${mode} Mode]: ${hint}`
+      text: `[Progressive Hint Level ${level} for ${currentProblem.title} - ${mode} Mode]: ${hint}`
     });
   } finally {
     setAiBusyState(false);
   }
 }
 
-// "Get Hint" button generates current hint level
 getHintBtn.addEventListener("click", () => {
   if (!isAiBusy) triggerProgressiveHint(currentHintLevel);
 });
 
-// "Next Hint" advances through levels 1 to 5
 nextHintBtn.addEventListener("click", () => {
   if (isAiBusy) return;
   currentHintLevel = currentHintLevel < 5 ? currentHintLevel + 1 : 1;
@@ -341,8 +464,8 @@ async function handleSendChatMessage() {
     const aiResponse = await sendChatMessage({
       message: message,
       currentCode: getCppCode(),
-      problemTitle: PROBLEM_TITLE,
-      problemStatement: PROBLEM_STATEMENT,
+      problemTitle: currentProblem.title,
+      problemStatement: currentProblem.statement.replace(/<[^>]+>/g, ""),
       terminalOutput: latestTerminalOutput,
       hintMode: hintModeSelect.value,
       chatHistory: chatHistory
@@ -368,6 +491,6 @@ clearChatBtn.addEventListener("click", () => {
   chatHistory.length = 0;
   const messageRows = chatMessagesContainer.querySelectorAll(".chat-message-row");
   messageRows.forEach((row, index) => {
-    if (index > 0) row.remove(); // Keep first greeting
+    if (index > 0) row.remove();
   });
 });

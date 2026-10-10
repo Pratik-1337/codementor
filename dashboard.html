@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard - CodeMentor</title>
-  <meta name="description" content="CodeMentor Dashboard - Your coding and DSA practice workspace.">
+  <meta name="description" content="CodeMentor Dashboard - Your C++ DSA learning workspace.">
   <link rel="stylesheet" href="css/style.css">
   <style>
     /* Prevent content flash before authentication verification completes */
@@ -13,6 +14,7 @@
     }
   </style>
 </head>
+
 <body>
 
   <!-- Loading State while checking Firebase Auth -->
@@ -24,162 +26,98 @@
   </div>
 
   <!-- Protected Dashboard Content (Hidden until auth state confirms active user) -->
-  <div id="dashboardContent" class="dashboard-container">
-    
-    <!-- Navigation Bar -->
-    <header class="dashboard-navbar">
-      <div style="display: flex; align-items: center;">
-        <a href="dashboard.html" class="brand-logo" aria-label="CodeMentor Home">
-          <span class="brand-badge">&lt;/&gt;</span>
-          <span>CodeMentor</span>
-        </a>
+  <div id="dashboardContent" class="db-dashboard-container">
 
-        <!-- Center Navigation Links -->
-        <nav class="nav-center-links">
-          <a href="dashboard.html" class="nav-link active">Dashboard</a>
-          <a href="problem.html" class="nav-link">Problems</a>
-        </nav>
-      </div>
+    <!-- 1. Compact Top Navigation -->
+    <header class="db-nav">
+      <!-- Left: Brand Logo -->
+      <a href="dashboard.html" class="db-brand" aria-label="CodeMentor Home">
+        <span class="db-brand-icon">&lt;/&gt;</span>
+        <span class="db-brand-name">CodeMentor</span>
+      </a>
 
-      <!-- User Profile & Logout -->
-      <div class="nav-user-section">
-        <div class="user-badge">
-          <div class="user-avatar" id="userAvatar">U</div>
-          <div class="user-details">
-            <span class="user-name" id="navUserName">Loading...</span>
-            <span class="user-email" id="navUserEmail">loading@codementor.dev</span>
-          </div>
+      <!-- Right: Links, Profile, and Logout -->
+      <nav class="db-nav-right" aria-label="User navigation">
+        <a href="problem.html" class="db-nav-link">Problems</a>
+        <a href="#stats" class="db-nav-link db-nav-link-muted">Progress</a>
+
+        <!-- User profile badge -->
+        <div class="db-profile-badge" title="Logged in user profile">
+          <div class="db-avatar" id="userAvatar">U</div>
+          <span class="db-user-name" id="navUserName">Developer</span>
+          <span id="navUserEmail" style="display: none;"></span>
+          <span id="welcomeGreeting" style="display: none;"></span>
         </div>
-        <button type="button" id="logoutBtn" class="btn btn-secondary" style="width: auto; padding: 8px 16px;">
+
+        <button type="button" id="logoutBtn" class="db-logout-btn">
           Log Out
         </button>
-      </div>
+      </nav>
     </header>
 
-    <!-- Welcome Hero -->
-    <section class="welcome-hero">
-      <h1 id="welcomeGreeting">Welcome, Developer</h1>
-      <p>Your coding workspace is ready. Practice problem-solving in C++, Python, Java, or JavaScript with our in-browser Monaco editor.</p>
-      <div style="margin-top: 16px;">
-        <a href="problem.html" class="btn btn-primary" style="display: inline-flex; width: auto; padding: 10px 22px;">
-          Open Problem #1 (Two Sum) →
+    <main>
+      <!-- 2. Welcome Section -->
+      <section class="db-welcome-section" aria-label="Welcome banner">
+        <div class="db-kicker">YOUR LEARNING WORKSPACE</div>
+        <h1 class="db-title">Build your problem-solving skills.</h1>
+        <p class="db-subtitle">
+          Practice DSA in C++. Get hints when you're stuck, not the entire solution.
+        </p>
+        <a href="problem.html" class="db-btn-start">
+          Start solving &rarr;
         </a>
-      </div>
-    </section>
+      </section>
 
-    <!-- Future Platform Modules (Placeholder Cards) -->
-    <section>
-      <h2 class="features-section-title">
-        <span>🚀</span> Workspace Modules
-      </h2>
-      <div class="features-grid">
-        
-        <!-- Module 1: DSA Problems -->
-        <article class="feature-card" style="border-color: var(--accent-primary);">
-          <div class="feature-header">
-            <span class="feature-icon">🧩</span>
-            <span class="badge-coming-soon" style="background-color: var(--success-bg); border-color: var(--success-border); color: var(--success);">Available</span>
-          </div>
-          <h3 class="feature-title">DSA Problems</h3>
-          <p class="feature-description">
-            Two Sum is ready to solve. Read constraints, trace examples, and test your solution.
-          </p>
-          <div style="margin-top: 14px;">
-            <a href="problem.html" style="font-weight: 600; font-size: 13px;">Solve Two Sum →</a>
-          </div>
-        </article>
-
-        <!-- Module 2: Code Editor -->
-        <article class="feature-card" style="border-color: var(--accent-primary);">
-          <div class="feature-header">
-            <span class="feature-icon">💻</span>
-            <span class="badge-coming-soon" style="background-color: var(--success-bg); border-color: var(--success-border); color: var(--success);">Available</span>
-          </div>
-          <h3 class="feature-title">Monaco Code Editor</h3>
-          <p class="feature-description">
-            Fully integrated in-browser editor with syntax highlighting for C++, Python, Java, and JavaScript.
-          </p>
-          <div style="margin-top: 14px;">
-            <a href="problem.html" style="font-weight: 600; font-size: 13px;">Launch Editor →</a>
-          </div>
-        </article>
-
-        <!-- Module 3: AI Mentor -->
-        <article class="feature-card" style="border-color: var(--accent-primary);">
-          <div class="feature-header">
-            <span class="feature-icon">🤖</span>
-            <span class="badge-coming-soon" style="background-color: var(--success-bg); border-color: var(--success-border); color: var(--success);">Available</span>
-          </div>
-          <h3 class="feature-title">AI Mentor</h3>
-          <p class="feature-description">
-            Interactive AI mentor sidebar for discussing approaches, analyzing time & space complexity, and debugging syntax errors.
-          </p>
-          <div style="margin-top: 14px;">
-            <a href="problem.html" style="font-weight: 600; font-size: 13px;">Chat with Mentor →</a>
-          </div>
-        </article>
-
-        <!-- Module 4: Hint System -->
-        <article class="feature-card" style="border-color: var(--accent-primary);">
-          <div class="feature-header">
-            <span class="feature-icon">💡</span>
-            <span class="badge-coming-soon" style="background-color: var(--success-bg); border-color: var(--success-border); color: var(--success);">Available</span>
-          </div>
-          <h3 class="feature-title">Hint System</h3>
-          <p class="feature-description">
-            5-stage progressive hints tailored to your thought process. Encourages problem solving without revealing the solution directly.
-          </p>
-          <div style="margin-top: 14px;">
-            <a href="problem.html" style="font-weight: 600; font-size: 13px;">Try Progressive Hints →</a>
-          </div>
-        </article>
-
-      </div>
-    </section>
-
-    <!-- Future AI Hint System Architecture Preview -->
-    <section class="hint-roadmap-box">
-      <h2 class="hint-roadmap-title">🎯 AI Hint System Architecture (Planned)</h2>
-      <p class="hint-roadmap-subtitle">
-        "Learn to solve. Don't just get the answer." — Hints will unlock progressively across 5 stages:
-      </p>
-
-      <div class="hint-stages">
-        <div class="hint-stage-item">
-          <div class="stage-number">Stage 01</div>
-          <div class="stage-name">Conceptual Hint</div>
-          <div class="stage-desc">Small nudge to spark intuition without revealing data structures.</div>
+      <!-- 3. Statistics Row (Attempted and Solved in two equal columns) -->
+      <section class="db-stats-row db-stats-2col" id="stats" aria-label="Progress statistics">
+        <div class="db-stat-card">
+          <div class="db-stat-label">Attempted</div>
+          <div class="db-stat-value" id="attemptedCount">0</div>
         </div>
 
-        <div class="hint-stage-item">
-          <div class="stage-number">Stage 02</div>
-          <div class="stage-name">Specific Direction</div>
-          <div class="stage-desc">Guidance on what information or state needs to be tracked.</div>
+        <div class="db-stat-card">
+          <div class="db-stat-label">Solved</div>
+          <div class="db-stat-value" id="solvedCount">0</div>
+        </div>
+      </section>
+
+      <!-- 4. LeetCode-style Solved Progress Bar -->
+      <section class="db-progress-bar-section" aria-label="Problem-solving progress">
+        <div class="db-progress-bar-header">
+          <span class="db-progress-bar-title">Problem-solving progress</span>
+          <div class="db-progress-bar-meta">
+            <span class="db-progress-ratio" id="progressRatioText">0 / 3 solved</span>
+            <span class="db-progress-percent" id="progressPercentText">0%</span>
+          </div>
+        </div>
+        <div class="db-progress-track" role="progressbar" id="progressBarTrack" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Overall DSA solving progress">
+          <div class="db-progress-fill" id="progressBarFill" style="width: 0%;"></div>
+        </div>
+      </section>
+
+      <!-- 5. Main Problem Section: Continue Practicing -->
+      <section class="db-problem-section" id="continue-practicing" aria-label="Current problems">
+        <div class="db-section-header">
+          <h2 class="db-section-heading">Continue practicing</h2>
+          <button type="button" class="db-view-all" id="viewAllBtn">View all</button>
         </div>
 
-        <div class="hint-stage-item">
-          <div class="stage-number">Stage 03</div>
-          <div class="stage-name">Algorithm / DS</div>
-          <div class="stage-desc">Explains the matching algorithm or data structure pattern.</div>
+        <!-- 6. One shared problem-list container with compact rows -->
+        <div class="db-problems-container" id="problemsContainer">
+          <!-- Dynamically populated from PROBLEMS catalog in js/dashboard.js -->
         </div>
+      </section>
+    </main>
 
-        <div class="hint-stage-item">
-          <div class="stage-number">Stage 04</div>
-          <div class="stage-name">Pseudocode Approach</div>
-          <div class="stage-desc">Step-by-step logical breakdown or high-level pseudo-code.</div>
-        </div>
-
-        <div class="hint-stage-item">
-          <div class="stage-number">Stage 05</div>
-          <div class="stage-name">Detailed Guidance</div>
-          <div class="stage-desc">Comprehensive assistance on edge cases, implementation, and complexity.</div>
-        </div>
-      </div>
-    </section>
+    <!-- Subtle Footer Note -->
+    <footer class="db-footer-note">
+      CodeMentor &middot; Interactive C++ DSA Practice Workspace
+    </footer>
 
   </div>
 
   <!-- Vanilla JavaScript Module -->
   <script type="module" src="js/dashboard.js"></script>
 </body>
+
 </html>

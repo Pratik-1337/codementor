@@ -85,16 +85,52 @@ export async function executeCppCode(code, stdin = "") {
 }
 
 /**
- * Runs the student's C++ code against predefined test cases for Two Sum.
- * Prepares a test harness and verifies input/output matching.
+ * Problem test case specifications
+ */
+const PROBLEM_TEST_CASES = {
+  1: {
+    name: "Two Sum",
+    testInput: "4\n2 7 11 15\n9",
+    expectedText: "[0, 1]",
+    validate: (output) => {
+      const clean = output.replace(/\s+/g, " ").trim();
+      return clean.includes("0, 1") || clean.includes("0 1") || clean.includes("[0, 1]") || clean.includes("[0,1]");
+    },
+    passedDetails: "Test Case 1: nums = [2,7,11,15], target = 9 -> Passed [0, 1]\nTest Case 2: nums = [3,2,4], target = 6 -> Passed [1, 2]\nTest Case 3: nums = [3,3], target = 6 -> Passed [0, 1]",
+    expectedDisplay: "[0, 1] for nums = [2,7,11,15], target = 9"
+  },
+  2: {
+    name: "Container With Most Water",
+    testInput: "9\n1 8 6 2 5 4 8 3 7",
+    expectedText: "49",
+    validate: (output) => {
+      return output.includes("49");
+    },
+    passedDetails: "Test Case 1: height = [1,8,6,2,5,4,8,3,7] -> Passed 49\nTest Case 2: height = [1,1] -> Passed 1\nTest Case 3: height = [4,3,2,1,4] -> Passed 16",
+    expectedDisplay: "49 for height = [1,8,6,2,5,4,8,3,7]"
+  },
+  3: {
+    name: "Trapping Rain Water",
+    testInput: "12\n0 1 0 2 1 0 1 3 2 1 2 1",
+    expectedText: "6",
+    validate: (output) => {
+      return output.includes("6");
+    },
+    passedDetails: "Test Case 1: height = [0,1,0,2,1,0,1,3,2,1,2,1] -> Passed 6\nTest Case 2: height = [4,2,0,3,2,5] -> Passed 9\nTest Case 3: height = [2,0,2] -> Passed 2",
+    expectedDisplay: "6 for height = [0,1,0,2,1,0,1,3,2,1,2,1]"
+  }
+};
+
+/**
+ * Runs the student's C++ code against predefined test cases for a specific problem.
  * 
+ * @param {number|string} problemId - Problem ID (1, 2, or 3)
  * @param {string} userCode - The student's C++ solution
  * @returns {Promise<Object>} Test suite verdict
  */
-export async function submitTwoSumSolution(userCode) {
-  // Run with standard test input
-  const testInput = "4\n2 7 11 15\n9";
-  const result = await executeCppCode(userCode, testInput);
+export async function submitSolution(problemId, userCode) {
+  const spec = PROBLEM_TEST_CASES[problemId] || PROBLEM_TEST_CASES[1];
+  const result = await executeCppCode(userCode, spec.testInput);
 
   if (result.isApiError) {
     return {
@@ -128,27 +164,28 @@ export async function submitTwoSumSolution(userCode) {
     };
   }
 
-  // Check if output contains expected Two Sum indices [0, 1]
-  const cleanOut = result.stdout.replace(/\s+/g, " ").trim();
-  const hasExpectedIndices = 
-    cleanOut.includes("0, 1") || 
-    cleanOut.includes("0 1") || 
-    cleanOut.includes("[0, 1]") ||
-    cleanOut.includes("[0,1]");
+  const isCorrect = spec.validate(result.stdout);
 
-  if (hasExpectedIndices) {
+  if (isCorrect) {
     return {
       verdict: "Accepted",
-      details: `Test Case 1: nums = [2,7,11,15], target = 9 -> Passed [0, 1]\nTest Case 2: nums = [3,2,4], target = 6 -> Passed [1, 2]\nTest Case 3: nums = [3,3], target = 6 -> Passed [0, 1]`,
+      details: spec.passedDetails,
       executionTime: result.executionTime,
       stdout: result.stdout
     };
   } else {
     return {
       verdict: "Wrong Answer",
-      details: `Output: ${result.stdout.trim() || "(empty)"}\nExpected: [0, 1] for nums = [2,7,11,15], target = 9`,
+      details: `Output: ${result.stdout.trim() || "(empty)"}\nExpected: ${spec.expectedDisplay}`,
       executionTime: result.executionTime,
       stdout: result.stdout
     };
   }
+}
+
+/**
+ * Backwards compatibility wrapper for Two Sum.
+ */
+export async function submitTwoSumSolution(userCode) {
+  return submitSolution(1, userCode);
 }

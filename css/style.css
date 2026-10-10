@@ -907,6 +907,28 @@ a:hover {
   font-family: var(--font-mono);
 }
 
+.badge-difficulty-medium {
+  background-color: rgba(210, 153, 34, 0.15);
+  color: #e3b341;
+  border: 1px solid var(--warning-border);
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--font-mono);
+}
+
+.badge-difficulty-hard {
+  background-color: rgba(248, 81, 73, 0.15);
+  color: var(--danger);
+  border: 1px solid var(--danger-border);
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--font-mono);
+}
+
 .problem-title {
   font-size: 22px;
   font-weight: 700;
@@ -1598,5 +1620,459 @@ a:hover {
     height: 320px;
   }
 }
+
+/* ==========================================================================
+   Refined GitHub-Dark CodeMentor Dashboard
+   ========================================================================== */
+.db-dashboard-container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 16px 20px 48px;
+}
+
+/* Compact Top Navigation */
+.db-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0 24px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid #21262d;
+}
+
+.db-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+}
+
+.db-brand:hover {
+  text-decoration: none;
+}
+
+.db-brand-icon {
+  width: 32px;
+  height: 32px;
+  background-color: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #58a6ff;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.db-brand-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: #f0f6fc;
+  letter-spacing: -0.3px;
+}
+
+.db-nav-right {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.db-nav-link {
+  color: #c9d1d9;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+.db-nav-link:hover {
+  color: #58a6ff;
+  text-decoration: none;
+}
+
+.db-nav-link-muted {
+  color: #8b949e;
+}
+
+.db-nav-link-muted:hover {
+  color: #f0f6fc;
+}
+
+.db-profile-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background-color: transparent;
+  color: #c9d1d9;
+  font-size: 13.5px;
+  font-weight: 500;
+}
+
+.db-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: #21262d;
+  border: 1px solid #30363d;
+  color: #58a6ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+}
+
+.db-user-name {
+  font-size: 13.5px;
+  color: #c9d1d9;
+  font-weight: 500;
+}
+
+.db-logout-btn {
+  background: transparent;
+  border: 1px solid #30363d;
+  color: #8b949e;
+  font-size: 12.5px;
+  font-weight: 500;
+  padding: 5px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.db-logout-btn:hover {
+  color: #f0f6fc;
+  border-color: #8b949e;
+  background-color: #21262d;
+}
+
+/* Welcome Section */
+.db-welcome-section {
+  margin-bottom: 28px;
+}
+
+.db-kicker {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #8b949e;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.db-title {
+  font-size: 32px;
+  font-weight: 700;
+  color: #f0f6fc;
+  margin-bottom: 8px;
+  letter-spacing: -0.5px;
+  line-height: 1.25;
+}
+
+.db-subtitle {
+  font-size: 14.5px;
+  color: #8b949e;
+  margin-bottom: 20px;
+  line-height: 1.5;
+  max-width: 650px;
+}
+
+.db-btn-start {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #388bfd;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px 18px;
+  border-radius: 6px;
+  text-decoration: none;
+  transition: background-color var(--transition-fast);
+  border: none;
+}
+
+.db-btn-start:hover {
+  background-color: #1f6feb;
+  color: #ffffff;
+  text-decoration: none;
+}
+
+/* Statistics Row */
+.db-stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 32px;
+}
+
+.db-stats-2col {
+  grid-template-columns: repeat(2, 1fr);
+  margin-bottom: 20px;
+}
+
+.db-stat-card {
+  background-color: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  padding: 16px 20px;
+  min-height: 85px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.db-stat-label {
+  font-size: 13px;
+  color: #8b949e;
+  font-weight: 500;
+}
+
+.db-stat-value {
+  font-size: 26px;
+  font-weight: 600;
+  color: #c9d1d9;
+  line-height: 1;
+  margin-top: 6px;
+}
+
+/* LeetCode-style Solved Progress Bar */
+.db-progress-bar-section {
+  background-color: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin-bottom: 32px;
+}
+
+.db-progress-bar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.db-progress-bar-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #f0f6fc;
+}
+
+.db-progress-bar-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.db-progress-ratio {
+  color: #8b949e;
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
+.db-progress-percent {
+  color: #58a6ff;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  font-size: 13.5px;
+}
+
+.db-progress-track {
+  width: 100%;
+  height: 8px;
+  background-color: #21262d;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.db-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #1f6feb 0%, #388bfd 100%);
+  border-radius: 4px;
+  width: 0%;
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Main Problem Section */
+.db-problem-section {
+  margin-bottom: 36px;
+}
+
+.db-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 14px;
+}
+
+.db-section-heading {
+  font-size: 18px;
+  font-weight: 600;
+  color: #f0f6fc;
+}
+
+.db-view-all {
+  background: transparent;
+  border: none;
+  font-size: 13px;
+  color: #58a6ff;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0;
+  transition: color var(--transition-fast);
+}
+
+.db-view-all:hover {
+  color: #79c0ff;
+  text-decoration: underline;
+}
+
+.db-view-all-disabled {
+  opacity: 0.6;
+  cursor: default !important;
+  text-decoration: none !important;
+}
+
+.db-view-all-disabled:hover {
+  color: #58a6ff !important;
+  text-decoration: none !important;
+}
+
+/* Shared Problem List Container & Compact Rows */
+.db-problems-container {
+  background-color: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.db-problem-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #21262d;
+  text-decoration: none;
+  transition: background-color var(--transition-fast);
+}
+
+.db-problem-row:last-child {
+  border-bottom: none;
+}
+
+.db-problem-row:hover {
+  background-color: #1c2128;
+  text-decoration: none;
+}
+
+.db-problem-row-left {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.db-problem-row-title {
+  font-size: 15.5px;
+  font-weight: 600;
+  color: #f0f6fc;
+  line-height: 1.3;
+}
+
+.db-problem-row-topics {
+  font-size: 13px;
+  color: #8b949e;
+}
+
+.db-problem-row-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.db-problem-solve-btn {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #58a6ff;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: transform var(--transition-fast), color var(--transition-fast);
+}
+
+.db-problem-row:hover .db-problem-solve-btn {
+  color: #79c0ff;
+  transform: translateX(3px);
+}
+
+/* Difficulty Badges */
+.db-badge-easy {
+  background: rgba(35, 134, 54, 0.2);
+  color: #3fb950;
+  border: 1px solid rgba(57, 211, 83, 0.25);
+  border-radius: 12px;
+  padding: 2px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.db-badge-medium {
+  background: rgba(210, 153, 34, 0.2);
+  color: #e3b341;
+  border: 1px solid rgba(210, 153, 34, 0.35);
+  border-radius: 12px;
+  padding: 2px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.db-badge-hard {
+  background: rgba(248, 81, 73, 0.2);
+  color: #f85149;
+  border: 1px solid rgba(248, 81, 73, 0.35);
+  border-radius: 12px;
+  padding: 2px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+/* Footer note */
+.db-footer-note {
+  text-align: center;
+  font-size: 12px;
+  color: #6e7681;
+  margin-top: 36px;
+  padding-top: 16px;
+  border-top: 1px solid #21262d;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .db-nav {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .db-stats-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .db-title {
+    font-size: 26px;
+  }
+  .db-nav-right {
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+}
+
 
 
