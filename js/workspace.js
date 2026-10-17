@@ -20,7 +20,7 @@ import { auth, db } from "./firebase-config.js";
 import { logoutUser } from "./auth.js";
 import { initCppEditor, getCppCode, setCppCode } from "./editor.js";
 import { executeCppCode, submitSolution } from "./execution.js";
-import { sendChatMessage, requestProgressiveHint } from "./ai.js";
+import { sendChatMessage, requestProgressiveHint, formatMarkdown } from "./ai.js";
 import { PROBLEMS } from "./problems-data.js";
 import { trackProblemProgress } from "./progress.js";
 
@@ -35,7 +35,6 @@ const userAvatar = document.getElementById("userAvatar");
 const logoutBtn = document.getElementById("logoutBtn");
 
 // DOM Elements: Problem Left Panel
-const problemSelector = document.getElementById("problemSelector");
 const problemDifficultyBadge = document.getElementById("problemDifficultyBadge");
 const problemNumberLabel = document.getElementById("problemNumberLabel");
 const problemTitleHeader = document.getElementById("problemTitleHeader");
@@ -56,9 +55,6 @@ const clearTerminalBtn = document.getElementById("clearTerminalBtn");
 
 // DOM Elements: AI Mentor Sidebar & Hints
 const clearChatBtn = document.getElementById("clearChatBtn");
-const progressiveHintCard = document.getElementById("progressiveHintCard");
-const hintCardLevel = document.getElementById("hintCardLevel");
-const hintCardText = document.getElementById("hintCardText");
 const nextHintBtn = document.getElementById("nextHintBtn");
 
 const chatMessagesContainer = document.getElementById("chatMessagesContainer");
@@ -69,9 +65,10 @@ const sendChatBtn = document.getElementById("sendChatBtn");
 // Active State
 let currentUser = null;
 let currentProblem = PROBLEMS[0];
-let currentHintLevel = 1;
+const problemHintLevels = { 1: 1, 2: 1, 3: 1 };
+const problemPreviousHints = { 1: [], 2: [], 3: [] };
+const problemChatHistory = { 1: [], 2: [], 3: [] };
 let latestTerminalOutput = "";
-const chatHistory = [];
 let isAiBusy = false;
 
 /**
@@ -97,9 +94,7 @@ function loadProblem(problemId, updateUrl = true) {
   if (problemTitleHeader) {
     problemTitleHeader.textContent = p.title;
   }
-  if (problemSelector) {
-    problemSelector.value = p.id;
-  }
+  document.title = `${p.title} - CodeMentor C++ Workspace`;
 
   if (problemContentContainer) {
     let html = `<p class="problem-description">${p.statement}</p>`;
@@ -135,13 +130,9 @@ function loadProblem(problemId, updateUrl = true) {
     customStdinInput.value = p.defaultStdin;
   }
 
-  // Reset hints & terminal
-  currentHintLevel = 1;
-  if (progressiveHintCard) {
-    progressiveHintCard.classList.remove("is-visible");
-  }
-  if (hintCardText) hintCardText.textContent = "";
-  if (hintCardLevel) hintCardLevel.textContent = `Hint Level 1 (${hintModeSelect ? hintModeSelect.value : "NORMAL"})`;
+  // Update hint controls and chat view for this problem
+  updateHintButtons();
+  renderCurrentProblemChat();
 
   if (terminalStatus) {
     terminalStatus.textContent = "Ready";
@@ -192,11 +183,16 @@ onAuthStateChanged(auth, async (user) => {
   // Check URL query parameter (?id=1, ?id=2, ?id=3)
   const urlParams = new URLSearchParams(window.location.search);
   const requestedId = parseInt(urlParams.get("id"), 10) || 1;
+  const initialProblem = PROBLEMS.find(item => item.id === requestedId) || PROBLEMS[0];
+  const storageKey = `codementor_code_cpp_p${initialProblem.id}`;
+  const initialCode = localStorage.getItem(storageKey) || initialProblem.starterCode;
 
-  // Initialize Monaco Editor with change persistence
+  // Initialize Monaco Editor with initial code & change persistence
   initCppEditor("editorContainer", (newCode) => {
-    localStorage.setItem(`codementor_code_cpp_p${currentProblem.id}`, newCode);
-  });
+    if (currentProblem) {
+      localStorage.setItem(`codementor_code_cpp_p${currentProblem.id}`, newCode);
+    }
+  }, initialCode);
 
   // Load problem content
   loadProblem(requestedId, false);
@@ -204,13 +200,6 @@ onAuthStateChanged(auth, async (user) => {
 
 if (logoutBtn) {
   logoutBtn.addEventListener("click", logoutUser);
-}
-
-// Problem Selector Dropdown
-if (problemSelector) {
-  problemSelector.addEventListener("change", (e) => {
-    loadProblem(e.target.value, true);
-  });
 }
 
 // Support browser back/forward buttons
@@ -338,26 +327,20 @@ ${testResult.details}`;
 /* ==============================================================================
    Reset & Terminal Clear
    ============================================================================== */
-resetBtn.addEventListener("click", () => {
-  const current = getCppCode().trim();
-  if (current && current !== currentProblem.starterCode.trim()) {
-    if (!confirm(`Are you sure you want to reset your C++ code to the starter template for ${currentProblem.title}?`)) {
-      return;
-    }
-  }
+if (resetBtn) {
+  resetBtn.addEventListener("click", () => {
+    if (!currentProblem) return;
 
-  setCppCode(currentProblem.starterCode);
-  customStdinInput.value = currentProblem.defaultStdin;
-  terminalStatus.textContent = "Ready";
-  terminalStatus.className = "status-pill status-ready";
-  terminalConsole.textContent = `$ Editor and terminal reset to starter template for ${currentProblem.title}.`;
+    // 1. Read default C++ starter template for currently selected problem
+    const starter = currentProblem.starterCode || "";
 
-  // Reset hints
-  currentHintLevel = 1;
-  progressiveHintCard.classList.remove("is-visible");
-  hintCardText.textContent = "";
-  hintCardLevel.textContent = `Hint Level 1 (${hintModeSelect.value})`;
-});
+    // 2 & 3. Replace Monaco editor contents immediately with that starter template
+    setCppCode(starter);
+
+    // Save restored code to localStorage for the active problem
+    localStorage.setItem(`codementor_code_cpp_p${currentProblem.id}`, starter);
+  });
+}
 
 clearTerminalBtn.addEventListener("click", () => {
   terminalConsole.textContent = "$ Terminal cleared.";
@@ -366,69 +349,62 @@ clearTerminalBtn.addEventListener("click", () => {
 });
 
 /* ==============================================================================
-   WORKFLOW 5: Progressive Hint System (Single Hint visible at a time)
+   WORKFLOW 4 & 5: Unified Context-Aware AI Mentor Chat & Progressive Hint System
    ============================================================================== */
-function setAiBusyState(busy) {
-  isAiBusy = busy;
-  sendChatBtn.disabled = busy;
-  getHintBtn.disabled = busy;
-  nextHintBtn.disabled = busy;
-  chatInput.disabled = busy;
 
-  if (busy) {
-    aiThinkingRow.classList.add("is-active");
+/**
+ * Updates Get Hint and Next Hint buttons based on current problem's hint level.
+ */
+function updateHintButtons() {
+  const pid = currentProblem?.id || 1;
+  const level = problemHintLevels[pid] || 1;
+  if (!getHintBtn || !nextHintBtn) return;
+
+  if (level === 1) {
+    getHintBtn.style.display = "inline-flex";
+    getHintBtn.innerHTML = "<span>💡</span> Get Hint";
+    getHintBtn.disabled = isAiBusy;
+    nextHintBtn.style.display = "none";
+  } else if (level <= 5) {
+    getHintBtn.style.display = "none";
+    nextHintBtn.style.display = "inline-flex";
+    nextHintBtn.innerHTML = `<span>💡</span> Next Hint (${level}/5)`;
+    nextHintBtn.disabled = isAiBusy;
+    nextHintBtn.title = `Ask AI for Hint Level ${level} of 5`;
   } else {
-    aiThinkingRow.classList.remove("is-active");
+    getHintBtn.style.display = "none";
+    nextHintBtn.style.display = "inline-flex";
+    nextHintBtn.innerHTML = `<span>💡</span> All Hints Given`;
+    nextHintBtn.disabled = true;
+    nextHintBtn.title = "All 5 progressive hints have been unlocked";
   }
 }
 
-async function triggerProgressiveHint(level) {
-  if (isAiBusy) return;
+/**
+ * Renders the active problem's conversation history in the chat panel.
+ */
+function renderCurrentProblemChat() {
+  if (!chatMessagesContainer) return;
+  const pid = currentProblem?.id || 1;
+  const history = problemChatHistory[pid] || [];
 
-  const mode = hintModeSelect.value;
-  hintCardLevel.textContent = `Hint Level ${level} of 5 (${mode})`;
-  hintCardText.textContent = `AI is analyzing your C++ code for ${currentProblem.title} and preparing Hint Level ${level}...`;
-  progressiveHintCard.classList.add("is-visible");
+  // Remove existing dynamic message rows, preserving only the initial welcome message (row 0)
+  const rows = chatMessagesContainer.querySelectorAll(".chat-message-row");
+  rows.forEach((row, idx) => {
+    if (idx > 0) row.remove();
+  });
 
-  setAiBusyState(true);
-
-  try {
-    const hint = await requestProgressiveHint({
-      currentCode: getCppCode(),
-      problemTitle: currentProblem.title,
-      problemStatement: currentProblem.statement.replace(/<[^>]+>/g, ""),
-      terminalOutput: latestTerminalOutput,
-      hintMode: mode,
-      hintLevel: level,
-      chatHistory: chatHistory
-    });
-
-    hintCardText.textContent = hint;
-
-    // Add hint to chat context
-    chatHistory.push({
-      role: "assistant",
-      text: `[Progressive Hint Level ${level} for ${currentProblem.title} - ${mode} Mode]: ${hint}`
-    });
-  } finally {
-    setAiBusyState(false);
+  for (const item of history) {
+    appendChatMessageToDom(item.role === "user" ? "user" : "ai", item.text);
   }
 }
 
-getHintBtn.addEventListener("click", () => {
-  if (!isAiBusy) triggerProgressiveHint(currentHintLevel);
-});
+/**
+ * Appends a message bubble directly into the chat DOM with Markdown support.
+ */
+function appendChatMessageToDom(sender, text) {
+  if (!chatMessagesContainer) return;
 
-nextHintBtn.addEventListener("click", () => {
-  if (isAiBusy) return;
-  currentHintLevel = currentHintLevel < 5 ? currentHintLevel + 1 : 1;
-  triggerProgressiveHint(currentHintLevel);
-});
-
-/* ==============================================================================
-   WORKFLOW 4: AI Mentor Chat Sidebar (Context-Aware)
-   ============================================================================== */
-function appendChatMessage(sender, text) {
   const row = document.createElement("div");
   row.className = `chat-message-row ${sender}`;
 
@@ -438,7 +414,12 @@ function appendChatMessage(sender, text) {
 
   const bubble = document.createElement("div");
   bubble.className = "chat-bubble";
-  bubble.textContent = text;
+
+  if (sender === "user") {
+    bubble.textContent = text;
+  } else {
+    bubble.innerHTML = formatMarkdown(text);
+  }
 
   row.appendChild(label);
   row.appendChild(bubble);
@@ -447,50 +428,161 @@ function appendChatMessage(sender, text) {
   chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
 }
 
-async function handleSendChatMessage() {
+/**
+ * Appends a message to active problem state and DOM.
+ */
+function appendChatMessage(sender, text) {
+  const pid = currentProblem?.id || 1;
+  if (!problemChatHistory[pid]) {
+    problemChatHistory[pid] = [];
+  }
+  problemChatHistory[pid].push({
+    role: sender === "user" ? "user" : "assistant",
+    text: text
+  });
+
+  appendChatMessageToDom(sender, text);
+}
+
+/**
+ * Sets busy loading state on UI elements.
+ */
+function setAiBusyState(busy) {
+  isAiBusy = busy;
+  if (sendChatBtn) sendChatBtn.disabled = busy;
+  if (getHintBtn) getHintBtn.disabled = busy;
+  if (nextHintBtn) {
+    const pid = currentProblem?.id || 1;
+    const level = problemHintLevels[pid] || 1;
+    nextHintBtn.disabled = busy || (level > 5);
+  }
+  if (chatInput) chatInput.disabled = busy;
+
+  if (busy) {
+    aiThinkingRow.classList.add("is-active");
+  } else {
+    aiThinkingRow.classList.remove("is-active");
+  }
+}
+
+/**
+ * Unified pipeline for sending user chat messages and progressive hint requests.
+ */
+async function sendAiInteraction({ message, requestType = "chat", hintLevel = null }) {
   if (isAiBusy) return;
 
-  const message = chatInput.value.trim();
-  if (!message) return;
+  const pid = currentProblem?.id || 1;
+  const history = problemChatHistory[pid] || [];
 
-  chatInput.value = "";
+  // 1. Add user message to UI and history
   appendChatMessage("user", message);
-  chatHistory.push({ role: "user", text: message });
 
+  // 2. Set busy state
   setAiBusyState(true);
   chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
 
   try {
     const aiResponse = await sendChatMessage({
       message: message,
+      requestType: requestType,
+      hintLevel: hintLevel,
       currentCode: getCppCode(),
+      problemId: currentProblem.id,
       problemTitle: currentProblem.title,
       problemStatement: currentProblem.statement.replace(/<[^>]+>/g, ""),
+      problemConstraints: currentProblem.constraints,
       terminalOutput: latestTerminalOutput,
-      hintMode: hintModeSelect.value,
-      chatHistory: chatHistory
+      hintMode: hintModeSelect ? hintModeSelect.value : "NORMAL",
+      previousHints: problemPreviousHints[currentProblem.id] || [],
+      chatHistory: history
     });
 
+    // 3. Append AI response formatted with Markdown
     appendChatMessage("ai", aiResponse);
-    chatHistory.push({ role: "assistant", text: aiResponse });
+
+    // 4. If this was a progressive hint, record it and advance hint level
+    if (requestType === "hint") {
+      if (!problemPreviousHints[currentProblem.id]) {
+        problemPreviousHints[currentProblem.id] = [];
+      }
+      problemPreviousHints[currentProblem.id].push(aiResponse);
+
+      const currentLvl = problemHintLevels[currentProblem.id] || 1;
+      if (currentLvl < 5) {
+        problemHintLevels[currentProblem.id] = currentLvl + 1;
+      }
+      updateHintButtons();
+    }
   } finally {
     setAiBusyState(false);
+    updateHintButtons();
   }
 }
 
-sendChatBtn.addEventListener("click", handleSendChatMessage);
+/**
+ * Hint button handler: triggers "Give me a hint." or "Give me the next hint, please."
+ */
+function handleHintRequest() {
+  if (isAiBusy) return;
+  const pid = currentProblem?.id || 1;
+  const level = problemHintLevels[pid] || 1;
 
-chatInput.addEventListener("keydown", (e) => {
-  if (e.key === "Enter" && !e.shiftKey) {
-    e.preventDefault();
-    handleSendChatMessage();
-  }
-});
+  if (level > 5) return;
 
-clearChatBtn.addEventListener("click", () => {
-  chatHistory.length = 0;
-  const messageRows = chatMessagesContainer.querySelectorAll(".chat-message-row");
-  messageRows.forEach((row, index) => {
-    if (index > 0) row.remove();
+  const userText = level === 1 ? "Give me a hint." : "Give me the next hint, please.";
+
+  sendAiInteraction({
+    message: userText,
+    requestType: "hint",
+    hintLevel: level
   });
-});
+}
+
+if (getHintBtn) {
+  getHintBtn.addEventListener("click", handleHintRequest);
+}
+
+if (nextHintBtn) {
+  nextHintBtn.addEventListener("click", handleHintRequest);
+}
+
+/**
+ * Ordinary chat handler
+ */
+function handleSendChatMessage() {
+  if (isAiBusy) return;
+
+  const message = chatInput.value.trim();
+  if (!message) return;
+
+  chatInput.value = "";
+  sendAiInteraction({
+    message: message,
+    requestType: "chat",
+    hintLevel: null
+  });
+}
+
+if (sendChatBtn) {
+  sendChatBtn.addEventListener("click", handleSendChatMessage);
+}
+
+if (chatInput) {
+  chatInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSendChatMessage();
+    }
+  });
+}
+
+if (clearChatBtn) {
+  clearChatBtn.addEventListener("click", () => {
+    const pid = currentProblem?.id || 1;
+    problemChatHistory[pid] = [];
+    const messageRows = chatMessagesContainer.querySelectorAll(".chat-message-row");
+    messageRows.forEach((row, index) => {
+      if (index > 0) row.remove();
+    });
+  });
+}

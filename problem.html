@@ -124,13 +124,6 @@
               <span>⚡</span> C++ (GCC 14)
             </span>
 
-            <!-- Problem Selector Dropdown -->
-            <select id="problemSelector" class="problem-selector" title="Switch DSA problem">
-              <option value="1">1. Two Sum (Easy)</option>
-              <option value="2">2. Container With Most Water (Medium)</option>
-              <option value="3">3. Trapping Rain Water (Hard)</option>
-            </select>
-
             <!-- Hint Mode Selector -->
             <div class="hint-mode-group">
               <label for="hintModeSelect">Hint Mode:</label>
@@ -148,6 +141,9 @@
             </button>
             <button type="button" id="getHintBtn" class="btn-get-hint" title="Ask AI for progressive guidance">
               <span>💡</span> Get Hint
+            </button>
+            <button type="button" id="nextHintBtn" class="btn-get-hint" style="display: none;" title="Ask AI for the next progressive hint">
+              <span>💡</span> Next Hint
             </button>
             <button type="button" id="runCodeBtn" class="btn-run" title="Compile and run C++ code">
               <span>▶</span> Run Code
@@ -217,14 +213,6 @@
           </button>
         </div>
 
-        <!-- Dynamic Progressive Hint Card (Appears when Get Hint is requested) -->
-        <div id="progressiveHintCard" class="progressive-hint-card">
-          <div class="hint-card-header">
-            <span id="hintCardLevel" class="hint-card-level">Hint Level 1 (NORMAL)</span>
-            <button type="button" id="nextHintBtn" class="btn-next-hint">Next Hint →</button>
-          </div>
-          <div id="hintCardText" class="hint-card-text"></div>
-        </div>
 
         <!-- Scrollable Chat Stream -->
         <div id="chatMessagesContainer" class="chat-messages-container">

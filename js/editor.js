@@ -22,13 +22,7 @@ using namespace std;
 
 vector<int> twoSum(vector<int>& nums, int target) {
     // Write your solution here:
-    for (int i = 0; i < nums.size(); i++) {
-        for (int j = i + 1; j < nums.size(); j++) {
-            if (nums[i] + nums[j] == target) {
-                return {i, j};
-            }
-        }
-    }
+
     return {};
 }
 
@@ -58,16 +52,34 @@ int main() {
     return 0;
 }`;
 
-// Monaco editor instance
+// Monaco editor instance & state
 let editorInstance = null;
+let pendingCode = null;
+let codeChangeCallback = null;
+let currentInitialCode = "";
+
+/**
+ * Returns whether the Monaco editor instance has finished loading.
+ * @returns {boolean}
+ */
+export function isEditorReady() {
+  return editorInstance !== null;
+}
 
 /**
  * Initializes the Monaco Editor for C++ inside the given DOM container.
  * 
  * @param {string} containerId - DOM container ID (e.g. "editorContainer")
  * @param {Function} onCodeChange - Callback triggered when code is typed
+ * @param {string} [initialCode] - Problem-specific starter code or saved code
  */
-export function initCppEditor(containerId, onCodeChange) {
+export function initCppEditor(containerId, onCodeChange, initialCode = "") {
+  codeChangeCallback = onCodeChange;
+  currentInitialCode = initialCode;
+  if (pendingCode === null && initialCode) {
+    pendingCode = initialCode;
+  }
+
   if (typeof require === "undefined") {
     console.error("Monaco loader (require.js) is not loaded.");
     return;
@@ -83,13 +95,13 @@ export function initCppEditor(containerId, onCodeChange) {
     const container = document.getElementById(containerId);
     if (!container) return;
 
-    // Load saved code from localStorage or default to runnable starter template
-    const savedCode = localStorage.getItem("codementor_code_cpp");
-    const initialCode = savedCode || STARTER_CPP_CODE;
+    // Use pendingCode if set, otherwise initialCode, otherwise fallback to default starter
+    const codeToUse = pendingCode !== null ? pendingCode : (initialCode || STARTER_CPP_CODE);
+    pendingCode = null;
 
     // Configure Monaco exclusively for C++
     editorInstance = monaco.editor.create(container, {
-      value: initialCode,
+      value: codeToUse,
       language: "cpp",
       theme: "vs-dark",
       automaticLayout: true,
@@ -105,39 +117,49 @@ export function initCppEditor(containerId, onCodeChange) {
 
     console.log("Monaco C++ Editor initialized successfully.");
 
-    // Listen to changes and auto-save
+    // Listen to changes and notify callback
     editorInstance.onDidChangeModelContent(() => {
       const code = editorInstance.getValue();
-      localStorage.setItem("codementor_code_cpp", code);
-      if (typeof onCodeChange === "function") {
-        onCodeChange(code);
+      if (typeof codeChangeCallback === "function") {
+        codeChangeCallback(code);
       }
     });
   });
 }
 
 /**
- * Returns current C++ source code from Monaco
+ * Returns current C++ source code from Monaco (or pending buffer if not initialized)
  * @returns {string}
  */
 export function getCppCode() {
-  if (!editorInstance) return "";
+  if (!editorInstance) {
+    if (pendingCode !== null) return pendingCode;
+    return currentInitialCode || "";
+  }
   return editorInstance.getValue();
 }
 
 /**
- * Updates the C++ code inside Monaco
+ * Updates the C++ code inside Monaco, or queues it if Monaco is not yet ready.
  * @param {string} newCode 
  */
 export function setCppCode(newCode) {
-  if (!editorInstance) return;
+  if (!editorInstance) {
+    pendingCode = newCode;
+    if (typeof codeChangeCallback === "function") {
+      codeChangeCallback(newCode);
+    }
+    return;
+  }
   editorInstance.setValue(newCode);
-  localStorage.setItem("codementor_code_cpp", newCode);
+  editorInstance.setScrollTop(0);
+  editorInstance.setPosition({ lineNumber: 1, column: 1 });
 }
 
 /**
- * Resets Monaco back to initial starter C++ code
+ * Resets Monaco back to problem starter C++ code
+ * @param {string} [starterCode]
  */
-export function resetCppCode() {
-  setCppCode(STARTER_CPP_CODE);
+export function resetCppCode(starterCode = STARTER_CPP_CODE) {
+  setCppCode(starterCode);
 }

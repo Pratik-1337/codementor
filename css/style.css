@@ -1472,7 +1472,6 @@ a:hover {
   border-radius: var(--radius-md);
   font-size: 13px;
   line-height: 1.5;
-  white-space: pre-wrap;
   word-break: break-word;
 }
 
@@ -1480,6 +1479,7 @@ a:hover {
   background-color: #0284c7;
   color: #ffffff;
   border-bottom-right-radius: 2px;
+  white-space: pre-wrap;
 }
 
 .chat-message-row.ai .chat-bubble {
@@ -1489,12 +1489,65 @@ a:hover {
   border-bottom-left-radius: 2px;
 }
 
+.chat-bubble p {
+  margin: 0 0 8px 0;
+}
+
+.chat-bubble p:last-child {
+  margin-bottom: 0;
+}
+
+.chat-bubble strong {
+  font-weight: 600;
+  color: inherit;
+}
+
+.chat-bubble em {
+  font-style: italic;
+}
+
 .chat-bubble code {
-  background-color: rgba(0, 0, 0, 0.3);
-  padding: 2px 5px;
+  background-color: rgba(0, 0, 0, 0.35);
+  padding: 2px 6px;
   border-radius: 4px;
   font-family: var(--font-mono);
   font-size: 12px;
+  color: #79c0ff;
+}
+
+.chat-message-row.user .chat-bubble code {
+  background-color: rgba(0, 0, 0, 0.25);
+  color: #ffffff;
+}
+
+.chat-bubble pre {
+  background-color: rgba(13, 17, 23, 0.9);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  margin: 8px 0;
+  overflow-x: auto;
+}
+
+.chat-bubble pre code {
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.45;
+  white-space: pre;
+  color: var(--text-primary);
+}
+
+.chat-bubble ul, .chat-bubble ol {
+  margin: 6px 0 8px 20px;
+  padding: 0;
+}
+
+.chat-bubble li {
+  margin-bottom: 4px;
+  line-height: 1.45;
 }
 
 /* AI Thinking Indicator */

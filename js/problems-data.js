@@ -44,13 +44,7 @@ using namespace std;
 
 vector<int> twoSum(vector<int>& nums, int target) {
     // Write your solution here:
-    for (int i = 0; i < nums.size(); i++) {
-        for (int j = i + 1; j < nums.size(); j++) {
-            if (nums[i] + nums[j] == target) {
-                return {i, j};
-            }
-        }
-    }
+
     return {};
 }
 
@@ -103,21 +97,8 @@ using namespace std;
 
 int maxArea(vector<int>& height) {
     // Write your solution here:
-    int left = 0, right = height.size() - 1;
-    int maxWater = 0;
 
-    while (left < right) {
-        int width = right - left;
-        int currentWater = min(height[left], height[right]) * width;
-        maxWater = max(maxWater, currentWater);
-
-        if (height[left] < height[right]) {
-            left++;
-        } else {
-            right--;
-        }
-    }
-    return maxWater;
+    return 0;
 }
 
 int main() {
@@ -162,28 +143,8 @@ using namespace std;
 
 int trap(vector<int>& height) {
     // Write your solution here:
-    int left = 0, right = height.size() - 1;
-    int left_max = 0, right_max = 0;
-    int trappedWater = 0;
 
-    while (left < right) {
-        if (height[left] < height[right]) {
-            if (height[left] >= left_max) {
-                left_max = height[left];
-            } else {
-                trappedWater += left_max - height[left];
-            }
-            left++;
-        } else {
-            if (height[right] >= right_max) {
-                right_max = height[right];
-            } else {
-                trappedWater += right_max - height[right];
-            }
-            right--;
-        }
-    }
-    return trappedWater;
+    return 0;
 }
 
 int main() {

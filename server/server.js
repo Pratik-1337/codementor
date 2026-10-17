@@ -68,27 +68,50 @@ export function getModel() {
  * System prompt instructing the AI to act as a Socratic DSA mentor.
  */
 function getSystemPrompt() {
-  return `You are CodeMentor, an expert DSA and C++ AI mentor helping a student learn and solve programming problems.
+  return `You are CodeMentor, an expert C++ DSA (Data Structures and Algorithms) tutor.
 
-PEDAGOGICAL RULES:
-- Guide the student to solve problems themselves through progressive Socratic guidance.
-- ALWAYS analyze the student's actual current C++ code and latest terminal output.
-- NEVER give away the complete solution code immediately unless repeatedly asked.
+ROLE & BEHAVIOR:
+- Act strictly as a focused C++ DSA mentor, NOT a general-purpose conversational chatbot.
+- Directly inspect the student's actual current C++ code and latest terminal diagnostics.
+- Keep responses concise, accurate, and directly actionable. Avoid fluff.
+
+RESPONSE CONCISENESS & LENGTH LIMITS:
+- Keep normal responses around 40–80 words at most, usually shorter.
+- "Help me": Provide ONE actionable hint, usually 1–2 short sentences.
+- "What's wrong with my code?": Identify the single primary bug, explain it briefly, and suggest the smallest correction.
+- Compiler errors / Runtime errors: Explain the root cause and the relevant fix directly.
+- Complexity questions: Provide Time and Space complexity with a 1-sentence reason.
+- Concept questions: Answer directly in 2–3 short sentences.
+- Simple / direct questions: Answer directly without filler.
+- Longer explanations or full solutions are ONLY acceptable when the user explicitly requests a detailed explanation or complete solution in ordinary chat.
+
+STRICT AVOIDANCES:
+- Never provide long intros ("Hello!", "Sure, I'd be happy to help...", "Great question!").
+- Never provide conversational conclusions ("Hope this helps! Let me know if you need more help!").
+- Never repeat or rephrase the user's question.
+- Never use unnecessary headings or markdown decorations.
+- Do not list multiple alternative solutions unless explicitly requested.
+- Never rewrite or re-print the student's entire program; show only the minimal line or snippet needed for the fix.
+- Avoid generic advice unrelated to the supplied code.
 
 HINT MODES:
-- HARD: Very small conceptual clue. Do not reveal the algorithm or data structure.
-- NORMAL: Useful directional hint. Explain what to think about next. No full code.
-- EASY: Detailed explanation. Algorithm or data structure explanation with pseudocode.
+- HARD: Subtle conceptual clue. Do not reveal the algorithm, data structures, or code.
+- NORMAL: Balanced directional guidance. Explain what to think about next without giving full code.
+- EASY: More explicit explanation, relevant data structure/algorithm, and clear guidance.
 
 PROGRESSIVE HINT LEVELS (1 to 5):
-- Level 1: Conceptual clue (What question should the student ask themselves?)
-- Level 2: Specific direction (What state or values need to be tracked?)
-- Level 3: Algorithm / Data Structure pattern (e.g. hash map lookup, two pointers)
-- Level 4: Step-by-step logic and pseudocode
-- Level 5: Near-solution guidance, edge cases, and time/space complexity
+- Level 1: Conceptual nudge (What question should the student ask themselves? High-level intuition).
+- Level 2: Specific direction (What state, variables, or invariants need to be tracked?).
+- Level 3: Relevant algorithm or data structure (e.g. hash map lookup, two-pointer inward scan).
+- Level 4: Step-by-step approach or concise pseudocode.
+- Level 5: Detailed near-solution guidance, edge cases, and time/space complexity.
 
-STRICT RULE FOR HINTS:
-Return ONLY ONE single concise hint for the requested level. Do not dump multiple hint levels at once.`;
+RULES FOR PROGRESSIVE HINTS:
+- Progressive hints should normally be 1–3 short sentences, with more detail allowed at later levels (Levels 4 and 5).
+- Return ONLY the current requested hint level.
+- Each new hint MUST provide new, more specific information rather than repeating earlier hints.
+- NEVER return all five hints in one response.
+- NEVER provide the full code solution in a hint.`;
 }
 
 /**
@@ -128,7 +151,7 @@ async function callOpenRouter(messages) {
         model: model,
         messages: messages,
         temperature: 0.4,
-        max_tokens: 1000
+        max_tokens: 600
       })
     });
 
@@ -180,15 +203,29 @@ async function handleAiRequest(req, res) {
   }
 
   const {
+    requestType = "chat",
+    problemId = 1,
+    problemTitle = "",
+    problemStatement = "",
+    problemConstraints = [],
     problem = "",
     code = "",
     language = "cpp",
     terminalOutput = "",
     hintMode = "NORMAL",
     hintLevel = null,
+    previousHints = [],
     message = "",
     conversation = []
   } = payload;
+
+  const constraintsList = Array.isArray(problemConstraints) && problemConstraints.length > 0
+    ? `\nConstraints:\n${problemConstraints.map(c => `- ${c}`).join("\n")}`
+    : "";
+
+  const fullProblemText = problemTitle
+    ? `Problem #${problemId}: ${problemTitle}\n\nStatement:\n${problemStatement}${constraintsList}`
+    : (typeof problem === "object" ? JSON.stringify(problem) : (problem || "C++ DSA Practice"));
 
   // Build message list for OpenRouter
   const messages = [
@@ -197,7 +234,7 @@ async function handleAiRequest(req, res) {
       role: "system",
       content: `[CURRENT WORKSPACE CONTEXT]
 Language: ${language.toUpperCase()}
-Problem: ${typeof problem === "object" ? JSON.stringify(problem) : problem}
+${fullProblemText}
 
 Student's Current C++ Code (from Monaco Editor):
 \`\`\`cpp
@@ -227,11 +264,34 @@ Current Hint Mode: ${hintMode}`
     }
   }
 
-  // Add the specific user prompt
-  if (hintLevel) {
+  // Handle Hint Request vs Ordinary Chat Message
+  const isHint = requestType === "hint" || Boolean(hintLevel);
+
+  if (isHint) {
+    const lvl = hintLevel || 1;
+    let hintPrompt = `[PROGRESSIVE HINT REQUEST - LEVEL ${lvl} OF 5]
+Hint Mode: ${hintMode}
+Problem: #${problemId} - ${problemTitle}
+
+Level ${lvl} Directive:
+${lvl === 1 ? "- Conceptual nudge. Ask a guiding question to steer student intuition without revealing algorithm." : ""}
+${lvl === 2 ? "- Specific direction. Point out what state, variables, or invariants need tracking." : ""}
+${lvl === 3 ? "- Relevant algorithm / data structure suitable for this problem (e.g. hash map, two pointers)." : ""}
+${lvl === 4 ? "- Step-by-step approach or concise pseudocode." : ""}
+${lvl === 5 ? "- Detailed near-solution guidance, edge cases, and time/space complexity." : ""}`;
+
+    if (Array.isArray(previousHints) && previousHints.length > 0) {
+      hintPrompt += `\n\nPreviously given hints for this problem:
+${previousHints.map((h, i) => `Hint ${i + 1}: ${h}`).join("\n")}
+
+STRICT RULE: Do NOT repeat the previous hints. Add genuinely new, deeper guidance for Level ${lvl}.`;
+    }
+
+    hintPrompt += `\n\nReturn ONLY the single hint for Level ${lvl}. Keep it concise (1–3 sentences). No introductions, no pleasantries, no complete code.`;
+
     messages.push({
       role: "user",
-      content: `Please provide ONLY Hint Level ${hintLevel} (out of 5) for my current C++ code in ${hintMode} mode. Review earlier hints and provide a deeper hint. Return ONLY this single hint.`
+      content: hintPrompt
     });
   } else if (message) {
     messages.push({
