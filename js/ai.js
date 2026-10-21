@@ -3,29 +3,93 @@
  * CodeMentor - AI Mentor Frontend Client (ai.js)
  * ==============================================================================
  * 
- * Communicates with the CodeMentor backend (/api/ai) powered by OpenRouter.
+ * Communicates with the CodeMentor backend (/api/ai) powered by local Ollama
+ * (qwen2.5-coder:7b).
  * 
  * Features:
+ * - Real-time progressive token streaming (SSE)
+ * - Instant greeting & acknowledgement detection (0ms latency fast-path)
+ * - 4-Level Progressive Hint system (Conceptual -> Algorithm -> Steps -> Implementation)
+ * - Full-Code Consent Gate (safeguards learning, provides full code upon confirmation)
  * - Context-Aware AI Mentor Chat (analyzes user's ACTUAL live Monaco C++ code)
- * - Single-level Progressive Hints (dynamically calibrated by HARD / NORMAL / EASY modes)
- * - Zero client-side API key exposure (API key stays strictly on the server)
- * - Clear, specific error reporting without generic messages
+ * - Clear, user-friendly error reporting directly in the mentor chat stream
  * ==============================================================================
  */
+
+/**
+ * Fast deterministic greeting and acknowledgement detector.
+ * Returns an instant friendly response for greetings/thanks/farewells
+ * without calling Ollama or invoking heavy AI pipelines.
+ * Returns null if the message contains coding questions or problem details.
+ */
+export function getFastGreetingResponse(rawMessage) {
+  if (!rawMessage || typeof rawMessage !== "string") return null;
+  const msg = rawMessage.trim().toLowerCase();
+  const cleaned = msg.replace(/[!?.,:;'"~`@#$%^&*()_+\-=[\]{}|\\/<>]/g, " ").trim().replace(/\s+/g, " ");
+
+  const greetings = new Set([
+    "hi", "hello", "hey", "hey there", "hello there", "good morning", "good afternoon", "good evening", "yo", "sup", "hola"
+  ]);
+
+  const thanks = new Set([
+    "thanks", "thank you", "thx", "thanks a lot", "thank you so much", "many thanks", "tysm"
+  ]);
+
+  const farewells = new Set([
+    "bye", "goodbye", "cya", "see you", "bye bye", "have a good day", "see ya"
+  ]);
+
+  const acks = new Set([
+    "ok", "okay", "got it", "understood", "cool", "great", "awesome", "nice", "k", "alright", "all right"
+  ]);
+
+  const strippedAddr = cleaned.replace(/\b(codementor|mentor|ai|bot|assistant)\b/g, "").trim().replace(/\s+/g, " ");
+
+  if (greetings.has(cleaned) || greetings.has(strippedAddr)) {
+    return "Hey! What are you working on?";
+  }
+
+  if (thanks.has(cleaned) || thanks.has(strippedAddr)) {
+    return "You're welcome!";
+  }
+
+  if (farewells.has(cleaned) || farewells.has(strippedAddr)) {
+    return "Goodbye! Happy coding and good luck with your DSA practice!";
+  }
+
+  if (acks.has(cleaned) || acks.has(strippedAddr)) {
+    return "Sounds good! Try coding it up or let me know if you get stuck.";
+  }
+
+  return null;
+}
+
+/**
+ * Detects whether the user is explicitly requesting the complete code/solution.
+ */
+export function isFullCodeRequest(rawMessage) {
+  if (!rawMessage || typeof rawMessage !== "string") return false;
+  const msg = rawMessage.trim().toLowerCase();
+  const cleaned = msg.replace(/[!?.,:;'"~`]/g, " ").trim().replace(/\s+/g, " ");
+
+  const patterns = [
+    /\b(give|show|provide|send)\s+(me\s+)?(the\s+)?(full|complete|entire|whole)\s+(code|solution|program|cpp|implementation)\b/,
+    /\b(full|complete|entire|whole)\s+(code|solution|program|implementation)\s*(please)?\b/,
+    /\bshow\s+(me\s+)?(the\s+)?(solution|code)\b/,
+    /\bi\s+(don'?t|do\s+not)\s+want\s+hints?\b/,
+    /\bno\s+hints?\b/,
+    /\bjust\s+(give|show)\s+(me\s+)?(the\s+)?code\b/,
+    /\bshow\s+full\s+code\b/
+  ];
+
+  return patterns.some(p => p.test(cleaned));
+}
 
 /**
  * Safely converts Markdown text into sanitized HTML.
  * Escapes all HTML special characters first, protecting against XSS and preserving
  * C++ templates like `unordered_map<int, int>` or `vector<int>`.
- * 
- * Supported Markdown:
- * - Fenced code blocks: ```lang ... ```
- * - Inline code: `...`
- * - Bold: **text** or __text__
- * - Italic: *text* or _text_
- * - Ordered lists: 1. Item
- * - Bulleted lists: - Item or * Item
- * - Paragraphs & line breaks
+ * Handles unclosed code fences smoothly during progressive token streaming.
  * 
  * @param {string} rawText
  * @returns {string} Sanitized HTML string
@@ -41,29 +105,42 @@ export function formatMarkdown(rawText) {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
 
+  // Handle unclosed code fences while streaming tokens
+  const fenceMatches = text.match(/```/g);
+  if (fenceMatches && fenceMatches.length % 2 !== 0) {
+    text += "\n```";
+  }
+
   const codeBlocks = [];
   const inlineCodes = [];
 
   // 2. Extract fenced code blocks (```lang\ncode\n``` or ```code```)
+  // Use safe Unicode Private Use Area tokens without underscores or asterisks
   text = text.replace(/```([a-zA-Z0-9_\-+]*)\r?\n([\s\S]*?)```/g, (match, lang, code) => {
     const idx = codeBlocks.length;
     const langClass = lang ? ` class="language-${lang.trim()}"` : "";
     const cleanedCode = code.replace(/\r?\n$/, "");
     codeBlocks.push(`<pre><code${langClass}>${cleanedCode}</code></pre>`);
-    return `\x1aBLOCK_${idx}\x1a`;
+    return `\uE000BLOCK${idx}\uE001`;
   });
 
   text = text.replace(/```([\s\S]*?)```/g, (match, code) => {
     const idx = codeBlocks.length;
     codeBlocks.push(`<pre><code>${code.trim()}</code></pre>`);
-    return `\x1aBLOCK_${idx}\x1a`;
+    return `\uE000BLOCK${idx}\uE001`;
   });
 
-  // 3. Extract inline code (`code`)
+  // Handle unclosed inline code backtick while streaming
+  const inlineCount = (text.match(/`/g) || []).length;
+  if (inlineCount % 2 !== 0) {
+    text += "`";
+  }
+
+  // 3. Extract inline code (`code`) using safe tokens WITHOUT underscores
   text = text.replace(/`([^`\n]+?)`/g, (match, code) => {
     const idx = inlineCodes.length;
     inlineCodes.push(`<code>${code}</code>`);
-    return `\x1aINLINE_${idx}\x1a`;
+    return `\uE002CODE${idx}\uE003`;
   });
 
   // 4. Split by double newlines into blocks (paragraphs, lists, code blocks)
@@ -75,7 +152,7 @@ export function formatMarkdown(rawText) {
     if (!block) continue;
 
     // Preserve code blocks verbatim
-    if (/^\x1aBLOCK_\d+\x1a$/.test(block)) {
+    if (/^\uE000BLOCK\d+\uE001$/.test(block)) {
       formattedBlocks.push(block);
       continue;
     }
@@ -140,10 +217,10 @@ export function formatMarkdown(rawText) {
   let finalHtml = formattedBlocks.join("");
 
   // 5. Restore code blocks
-  finalHtml = finalHtml.replace(/\x1aBLOCK_(\d+)\x1a/g, (m, idx) => codeBlocks[Number(idx)] || "");
+  finalHtml = finalHtml.replace(/\uE000BLOCK(\d+)\uE001/g, (m, idx) => codeBlocks[Number(idx)] || "");
 
   // 6. Restore inline codes
-  finalHtml = finalHtml.replace(/\x1aINLINE_(\d+)\x1a/g, (m, idx) => inlineCodes[Number(idx)] || "");
+  finalHtml = finalHtml.replace(/\uE002CODE(\d+)\uE003/g, (m, idx) => inlineCodes[Number(idx)] || "");
 
   return finalHtml;
 }
@@ -153,15 +230,16 @@ function formatInline(str) {
   // Bold: **text** or __text__
   s = s.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
   s = s.replace(/__(.+?)__/g, "<strong>$1</strong>");
-  // Italic: *text* or _text_
+
+  // Italic: *text* (avoid touching double asterisks)
   s = s.replace(/(?:^|[^\*])\*([^\*\n]+?)\*(?!\*)/g, (match, p1) => {
     const prefix = match.startsWith("*") ? "" : match.charAt(0);
     return `${prefix}<em>${p1}</em>`;
   });
-  s = s.replace(/(?:^|[^_])_([^_]+?)_(?!_)/g, (match, p1) => {
-    const prefix = match.startsWith("_") ? "" : match.charAt(0);
-    return `${prefix}<em>${p1}</em>`;
-  });
+
+  // Italic: _text_ (only when surrounded by whitespace or boundaries, avoiding variable_names_like_this)
+  s = s.replace(/(^|\s)_([^\s_][^_]*?[^\s_]|[^\s_])_(?=\s|[.,!?;:]|$)/g, "$1<em>$2</em>");
+
   // Strikethrough: ~~text~~
   s = s.replace(/~~(.+?)~~/g, "<del>$1</del>");
   return s;
@@ -169,7 +247,6 @@ function formatInline(str) {
 
 /**
  * Determines the backend API endpoint URL.
- * Automatically handles same-origin requests or local multi-port dev servers.
  */
 function getApiEndpoint() {
   if (window.location.port === "5500") {
@@ -180,33 +257,25 @@ function getApiEndpoint() {
 
 /**
  * Formats a chat history array into clean message objects for the backend.
- * 
- * @param {Array} history
- * @returns {Array<{ role: string, content: string }>}
  */
 function formatConversation(history = []) {
   if (!Array.isArray(history)) return [];
   return history
     .filter(item => item && (item.text || item.content))
+    .slice(-4)
     .map(item => ({
       role: item.role === "user" ? "user" : "assistant",
-      content: (item.text || item.content || "").trim()
+      content: (item.text || item.content || "").trim().slice(0, 350)
     }));
 }
 
 /**
- * Sends a chat or hint message to the AI Mentor backend with full workspace context:
- * - Current C++ code from Monaco Editor
- * - Problem title, statement, and constraints
- * - Latest terminal output
- * - Hint mode (HARD / NORMAL / EASY)
- * - Distinct requestType ("chat" vs "hint")
- * - Progressive hintLevel (1 to 5)
- * - Previous hints given for this problem
- * - Previous conversation history
+ * Sends a chat or hint message to the AI Mentor backend with full workspace context.
+ * Supports token-by-token streaming via SSE for instant responsiveness.
  * 
  * @param {Object} options
- * @returns {Promise<string>} AI Mentor's contextual response
+ * @param {Function} [options.onToken] - Callback invoked with (chunk, accumulatedText) as tokens arrive
+ * @returns {Promise<string>} AI Mentor's full response
  */
 export async function sendChatMessage({
   message = "",
@@ -220,7 +289,10 @@ export async function sendChatMessage({
   terminalOutput = "",
   hintMode = "NORMAL",
   previousHints = [],
-  chatHistory = []
+  chatHistory = [],
+  fullCodeConsent = false,
+  stream = true,
+  onToken = null
 }) {
   const endpoint = getApiEndpoint();
   const formattedConversation = formatConversation(chatHistory);
@@ -238,7 +310,9 @@ export async function sendChatMessage({
     hintLevel: hintLevel,
     previousHints: previousHints,
     message: message || "",
-    conversation: formattedConversation
+    conversation: formattedConversation,
+    fullCodeConsent: Boolean(fullCodeConsent),
+    stream: Boolean(stream)
   };
 
   try {
@@ -248,40 +322,81 @@ export async function sendChatMessage({
       body: JSON.stringify(payload)
     });
 
+    // Check if the response is SSE stream
+    const contentType = response.headers.get("content-type") || "";
+    if (response.ok && contentType.includes("text/event-stream") && response.body) {
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let accumulatedText = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop(); // save incomplete line
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed.startsWith("data:")) continue;
+          const jsonStr = trimmed.slice(5).trim();
+          if (!jsonStr) continue;
+
+          try {
+            const data = JSON.parse(jsonStr);
+            if (data.error) {
+              throw new Error(data.error);
+            }
+            if (data.token) {
+              accumulatedText += data.token;
+              if (typeof onToken === "function") {
+                onToken(data.token, accumulatedText);
+              }
+            }
+            if (data.done && data.fullText) {
+              accumulatedText = data.fullText;
+            }
+          } catch (err) {
+            if (err.message && !err.message.includes("JSON")) {
+              throw err;
+            }
+          }
+        }
+      }
+
+      return accumulatedText.trim() || "AI Mentor completed response.";
+    }
+
+    // Standard JSON response (e.g. error, fast greeting, or non-streaming)
     const data = await response.json().catch(() => ({}));
 
     if (!response.ok || data.error) {
-      if (requestType === "hint" || hintLevel) {
-        return getLocalHintFallback(hintLevel || 1, hintMode, problemId);
-      }
-      const errMsg = data.error || (response.status === 401 ? "AI Mentor is not configured correctly." : "AI Mentor is temporarily unavailable.");
-      return errMsg;
+      const errMsg = data.error || (response.status === 401 ? "AI Mentor is not configured correctly." : `AI Mentor error (HTTP ${response.status}).`);
+      const err = new Error(errMsg);
+      err.status = response.status;
+      throw err;
     }
 
     if (data.response) {
-      return data.response.trim();
+      const resp = data.response.trim();
+      if (typeof onToken === "function") {
+        onToken(resp, resp);
+      }
+      return resp;
     }
 
-    if (requestType === "hint" || hintLevel) {
-      return getLocalHintFallback(hintLevel || 1, hintMode, problemId);
-    }
-
-    return "I have analyzed your C++ code. Could you clarify what specific part you'd like feedback on?";
+    return "AI Mentor returned an empty response. Please try rephrasing your question.";
 
   } catch (error) {
     console.error("AI Mentor request error:", error);
-    if (requestType === "hint" || hintLevel) {
-      return getLocalHintFallback(hintLevel || 1, hintMode, problemId);
-    }
-    return "Could not connect to AI Mentor. Check your internet connection.";
+    throw error;
   }
 }
 
 /**
- * Requests a progressive hint via the unified sendChatMessage pipeline.
- * 
- * @param {Object} options
- * @returns {Promise<string>}
+ * Requests a progressive hint (Levels 1 to 4) via the unified sendChatMessage pipeline.
  */
 export async function requestProgressiveHint(options = {}) {
   const level = options.hintLevel || 1;
@@ -296,33 +411,34 @@ export async function requestProgressiveHint(options = {}) {
 
 /**
  * Offline viva fallback hints when the backend server is unreachable.
- * Ensures the project remains presentable during viva evaluations.
+ * Structured strictly across 4 progressive levels:
+ * Level 1: Conceptual hint (core idea in 1-2 sentences, prompt next step, no code)
+ * Level 2: Algorithm direction (identify algorithm/DS, how it applies)
+ * Level 3: Step-by-step approach (main steps in order, short pseudocode)
+ * Level 4: Targeted implementation guidance (relevant code structure, key check)
  */
-function getLocalHintFallback(level, mode = "NORMAL", problemId = 1) {
+export function getLocalHintFallback(level, mode = "NORMAL", problemId = 1) {
   const problemHints = {
     1: {
-      1: "Think about what information you need to remember while scanning the array. Do you need each number's value, its index, or both?",
-      2: "Consider whether a hash map (`std::unordered_map<int, int>`) could help you quickly determine whether the **complement** (`target - nums[i]`) has already appeared.",
-      3: "Store each previously seen number and its index in `std::unordered_map<int, int>`. Before inserting `nums[i]`, check if `target - nums[i]` exists.",
-      4: "Algorithm Blueprint:\n1. Create `std::unordered_map<int, int> seen;`\n2. Loop `i` from 0 to `nums.size() - 1`:\n3. If `seen.count(target - nums[i])`, return `{seen[target - nums[i]], i}`.\n4. Else insert `seen[nums[i]] = i;`",
-      5: "Detailed Advice: An element cannot pair with itself. Inserting into the map *after* checking ensures you never pair `nums[i]` with itself. Time complexity: O(N), Auxiliary Space: O(N)."
+      1: "Think about what information you need to remember while scanning the array. For each number, what other value are you looking for to reach the target?",
+      2: "Use a hash map (`std::unordered_map<int, int>`). For each number `nums[i]`, check if its complement (`target - nums[i]`) already exists in the map.",
+      3: "Step-by-step approach:\n1. Initialize `std::unordered_map<int, int> seen;`\n2. Loop `i` from 0 to `n - 1`:\n   - Calculate `complement = target - nums[i]`.\n   - If `seen.count(complement)`, return `{seen[complement], i}`.\n   - Otherwise, store `seen[nums[i]] = i;`",
+      4: "Targeted snippet:\n```cpp\nint complement = target - nums[i];\nif (seen.find(complement) != seen.end()) {\n    return {seen[complement], i};\n}\nseen[nums[i]] = i;\n```\nInsert after checking so elements don't pair with themselves."
     },
     2: {
-      1: "How is area calculated between two vertical lines? Area = `min(height[left], height[right]) * (right - left)`. What happens to the width when you move pointers inward?",
-      2: "Start with the widest container using two pointers at index 0 and index `n - 1`. Notice that the width strictly decreases at every step.",
-      3: "Since width always shrinks, the only way to find a larger area is to find taller vertical lines. Which pointer limits current area: the shorter or the taller one?",
-      4: "Algorithm Blueprint:\n1. `left = 0`, `right = n - 1`, `maxArea = 0;`\n2. `while (left < right):`\n3.   `int h = min(height[left], height[right]);`\n4.   `maxArea = max(maxArea, h * (right - left));`\n5.   `if (height[left] < height[right]) left++; else right--;`",
-      5: "Detailed Advice: Always advance the pointer pointing to the shorter vertical bar. Time complexity: O(N), Auxiliary Space: O(1)."
+      1: "How is area calculated between two vertical lines? Width decreases as pointers move inward—how can you compensate for reduced width?",
+      2: "Use the two-pointer technique starting at both ends (`left = 0`, `right = n - 1`). The water height is always limited by the shorter vertical bar.",
+      3: "Step-by-step approach:\n1. Set `left = 0`, `right = n - 1`, `maxArea = 0`.\n2. While `left < right`:\n   - Compute `width = right - left` and `h = min(height[left], height[right])`.\n   - Update `maxArea = max(maxArea, width * h)`.\n   - Advance the pointer with the shorter bar.",
+      4: "Targeted snippet:\n```cpp\nwhile (left < right) {\n    int h = min(height[left], height[right]);\n    maxArea = max(maxArea, h * (right - left));\n    if (height[left] < height[right]) left++;\n    else right--;\n}\n```"
     },
     3: {
-      1: "How much rain water can be trapped above any single index `i`? It equals `min(max_left_height, max_right_height) - height[i]` (if positive).",
-      2: "Instead of precomputing prefix and suffix max arrays with O(N) memory, consider two pointers moving inward from left and right.",
-      3: "Maintain `left_max` and `right_max`. If `height[left] < height[right]`, the water level at `left` is strictly bounded by `left_max`.",
-      4: "Algorithm Blueprint:\n1. `left = 0, right = n - 1, left_max = 0, right_max = 0, total = 0;`\n2. `while (left < right):`\n3.   `if (height[left] < height[right]):`\n4.     `if (height[left] >= left_max) left_max = height[left]; else total += left_max - height[left];`\n5.     `left++;`\n6.   `else:` ... mirror logic for right pointer;",
-      5: "Detailed Advice: Monotonic two-pointer simulation processes each bar in O(1) time. Total Time: O(N), Auxiliary Space: O(1)."
+      1: "How much rain water can be trapped above any single index `i`? It depends entirely on the minimum of the highest bar to its left and right minus its own height.",
+      2: "Use two pointers moving inward (`left` and `right`) along with `left_max` and `right_max` to track the boundary heights without O(N) extra space.",
+      3: "Step-by-step approach:\n1. Set `left = 0`, `right = n - 1`, `left_max = 0`, `right_max = 0`, `water = 0`.\n2. While `left < right`:\n   - If `height[left] < height[right]`, process `left`: update `left_max` and add trapped water, then `left++`.\n   - Otherwise, mirror logic for `right`: update `right_max` and add trapped water, then `right--`.",
+      4: "Targeted snippet:\n```cpp\nif (height[left] < height[right]) {\n    if (height[left] >= left_max) left_max = height[left];\n    else water += left_max - height[left];\n    left++;\n} else {\n    if (height[right] >= right_max) right_max = height[right];\n    else water += right_max - height[right];\n    right--;\n}\n```"
     }
   };
 
   const selected = problemHints[problemId] || problemHints[1];
-  return selected[level] || "You have reached the final hint level (5 of 5). Review your code and run it to verify!";
+  return selected[level] || "You have reached the final hint level (4 of 4). Review your code and run it to verify!";
 }

@@ -27,10 +27,10 @@ vector<int> twoSum(vector<int>& nums, int target) {
 }
 
 int main() {
-    vector<int> nums = {2, 7, 11, 15};
-    int target = 9;
+    vector<int> nums = {3, 2, 4};
+    int target = 6;
 
-    cout << "Input: nums = [2, 7, 11, 15], target = 9" << endl;
+    cout << "Input: nums = [3, 2, 4], target = 6" << endl;
     vector<int> result = twoSum(nums, target);
 
     if (result.size() == 2) {
@@ -74,6 +74,14 @@ export function isEditorReady() {
  * @param {string} [initialCode] - Problem-specific starter code or saved code
  */
 export function initCppEditor(containerId, onCodeChange, initialCode = "") {
+  if (editorInstance) {
+    codeChangeCallback = onCodeChange;
+    if (initialCode) {
+      setCppCode(initialCode);
+    }
+    return;
+  }
+
   codeChangeCallback = onCodeChange;
   currentInitialCode = initialCode;
   if (pendingCode === null && initialCode) {
@@ -116,6 +124,22 @@ export function initCppEditor(containerId, onCodeChange, initialCode = "") {
     });
 
     console.log("Monaco C++ Editor initialized successfully.");
+
+    // Ensure Monaco dynamically adapts and expands to fill full container height/width
+    if (typeof ResizeObserver !== "undefined") {
+      const resizeObserver = new ResizeObserver(() => {
+        if (editorInstance) {
+          editorInstance.layout();
+        }
+      });
+      resizeObserver.observe(container);
+    }
+
+    window.addEventListener("resize", () => {
+      if (editorInstance) {
+        editorInstance.layout();
+      }
+    });
 
     // Listen to changes and notify callback
     editorInstance.onDidChangeModelContent(() => {

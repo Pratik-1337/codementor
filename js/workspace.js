@@ -20,7 +20,7 @@ import { auth, db } from "./firebase-config.js";
 import { logoutUser } from "./auth.js";
 import { initCppEditor, getCppCode, setCppCode } from "./editor.js";
 import { executeCppCode, submitSolution } from "./execution.js";
-import { sendChatMessage, requestProgressiveHint, formatMarkdown } from "./ai.js";
+import { sendChatMessage, requestProgressiveHint, formatMarkdown, getFastGreetingResponse, isFullCodeRequest } from "./ai.js";
 import { PROBLEMS } from "./problems-data.js";
 import { trackProblemProgress } from "./progress.js";
 
@@ -47,8 +47,7 @@ const submitBtn = document.getElementById("submitBtn");
 const resetBtn = document.getElementById("resetBtn");
 const getHintBtn = document.getElementById("getHintBtn");
 
-// DOM Elements: Custom Input & Terminal
-const customStdinInput = document.getElementById("customStdinInput");
+// DOM Elements: Terminal
 const terminalConsole = document.getElementById("terminalConsole");
 const terminalStatus = document.getElementById("terminalStatus");
 const clearTerminalBtn = document.getElementById("clearTerminalBtn");
@@ -63,27 +62,25 @@ const chatInput = document.getElementById("chatInput");
 const sendChatBtn = document.getElementById("sendChatBtn");
 
 // Active State
+const urlParams = new URLSearchParams(window.location.search);
+const requestedId = parseInt(urlParams.get("id"), 10) || 1;
+let currentProblem = PROBLEMS.find(item => item.id === requestedId) || PROBLEMS[0];
 let currentUser = null;
-let currentProblem = PROBLEMS[0];
+let isEditorInitialized = false;
+let activeAsyncOpId = 0;
+
 const problemHintLevels = { 1: 1, 2: 1, 3: 1 };
 const problemPreviousHints = { 1: [], 2: [], 3: [] };
 const problemChatHistory = { 1: [], 2: [], 3: [] };
+const problemFullCodeConsent = { 1: false, 2: false, 3: false };
+let lastFailedInteraction = null;
 let latestTerminalOutput = "";
 let isAiBusy = false;
 
 /**
- * Loads problem by ID and updates the workspace UI
+ * Renders problem statement, examples, and constraints into the left panel
  */
-function loadProblem(problemId, updateUrl = true) {
-  const p = PROBLEMS.find(item => item.id === Number(problemId)) || PROBLEMS[0];
-  currentProblem = p;
-
-  if (updateUrl) {
-    const newUrl = `${window.location.pathname}?id=${p.id}`;
-    window.history.pushState({ problemId: p.id }, "", newUrl);
-  }
-
-  // Update Left Panel
+function renderProblemPanel(p) {
   if (problemDifficultyBadge) {
     problemDifficultyBadge.textContent = p.difficulty;
     problemDifficultyBadge.className = p.difficultyClass;
@@ -118,6 +115,26 @@ function loadProblem(problemId, updateUrl = true) {
 
     problemContentContainer.innerHTML = html;
   }
+}
+
+// Synchronously render the requested problem on initial script load to prevent flashing/switching
+renderProblemPanel(currentProblem);
+
+/**
+ * Loads problem by ID and updates the workspace UI
+ */
+function loadProblem(problemId, updateUrl = true) {
+  activeAsyncOpId++; // Invalidate any in-flight execution or submission responses
+  const p = PROBLEMS.find(item => item.id === Number(problemId)) || PROBLEMS[0];
+  currentProblem = p;
+
+  if (updateUrl) {
+    const newUrl = `${window.location.pathname}?id=${p.id}`;
+    window.history.pushState({ problemId: p.id }, "", newUrl);
+  }
+
+  // Update Left Panel
+  renderProblemPanel(p);
 
   // Update Monaco Code
   const storageKey = `codementor_code_cpp_p${p.id}`;
@@ -125,14 +142,12 @@ function loadProblem(problemId, updateUrl = true) {
   const codeToLoad = savedCode || p.starterCode;
   setCppCode(codeToLoad);
 
-  // Update stdin
-  if (customStdinInput) {
-    customStdinInput.value = p.defaultStdin;
-  }
-
   // Update hint controls and chat view for this problem
   updateHintButtons();
   renderCurrentProblemChat();
+
+  if (runCodeBtn) runCodeBtn.disabled = false;
+  if (submitBtn) submitBtn.disabled = false;
 
   if (terminalStatus) {
     terminalStatus.textContent = "Ready";
@@ -180,22 +195,21 @@ onAuthStateChanged(auth, async (user) => {
   loadingScreen.style.display = "none";
   problemWorkspace.style.display = "block";
 
-  // Check URL query parameter (?id=1, ?id=2, ?id=3)
-  const urlParams = new URLSearchParams(window.location.search);
-  const requestedId = parseInt(urlParams.get("id"), 10) || 1;
-  const initialProblem = PROBLEMS.find(item => item.id === requestedId) || PROBLEMS[0];
-  const storageKey = `codementor_code_cpp_p${initialProblem.id}`;
-  const initialCode = localStorage.getItem(storageKey) || initialProblem.starterCode;
+  if (!isEditorInitialized) {
+    isEditorInitialized = true;
+    const storageKey = `codementor_code_cpp_p${currentProblem.id}`;
+    const initialCode = localStorage.getItem(storageKey) || currentProblem.starterCode;
 
-  // Initialize Monaco Editor with initial code & change persistence
-  initCppEditor("editorContainer", (newCode) => {
-    if (currentProblem) {
-      localStorage.setItem(`codementor_code_cpp_p${currentProblem.id}`, newCode);
-    }
-  }, initialCode);
+    // Initialize Monaco Editor with initial code & change persistence
+    initCppEditor("editorContainer", (newCode) => {
+      if (currentProblem) {
+        localStorage.setItem(`codementor_code_cpp_p${currentProblem.id}`, newCode);
+      }
+    }, initialCode);
 
-  // Load problem content
-  loadProblem(requestedId, false);
+    // Load problem content
+    loadProblem(currentProblem.id, false);
+  }
 });
 
 if (logoutBtn) {
@@ -214,12 +228,15 @@ window.addEventListener("popstate", (e) => {
    ============================================================================== */
 runCodeBtn.addEventListener("click", async () => {
   const code = getCppCode().trim();
-  const stdin = customStdinInput.value;
+  const stdin = (currentProblem && currentProblem.defaultStdin) ? currentProblem.defaultStdin : "";
 
   if (!code) {
     terminalConsole.textContent = "Error: Editor is empty. Please write C++ code before running.";
     return;
   }
+
+  const opSeq = ++activeAsyncOpId;
+  const targetPid = currentProblem.id;
 
   terminalStatus.textContent = "Running";
   terminalStatus.className = "status-pill status-running";
@@ -227,11 +244,17 @@ runCodeBtn.addEventListener("click", async () => {
   terminalConsole.textContent = `$ g++ -O3 solution.cpp -o solution\n$ ./solution\n\n[Compiling in remote C++ sandbox...]`;
 
   const result = await executeCppCode(code, stdin);
+
+  // Discard stale response if another operation or problem switch occurred
+  if (opSeq !== activeAsyncOpId || currentProblem.id !== targetPid) {
+    return;
+  }
+
   runCodeBtn.disabled = false;
 
   // Track problem attempt (only counted on actual code execution)
   if (currentUser) {
-    trackProblemProgress(currentUser.uid, currentProblem.id, { attempted: true });
+    trackProblemProgress(currentUser.uid, targetPid, { attempted: true });
   }
 
   if (result.isApiError) {
@@ -258,7 +281,7 @@ runCodeBtn.addEventListener("click", async () => {
     return;
   }
 
-  if (result.stderr) {
+  if (result.stderr || (result.exitCode && result.exitCode !== "0")) {
     terminalStatus.textContent = "Runtime Error";
     terminalStatus.className = "status-pill status-error";
     latestTerminalOutput = `Runtime Error:\n${result.stderr}\nOutput:\n${result.stdout}`;
@@ -266,8 +289,8 @@ runCodeBtn.addEventListener("click", async () => {
     return;
   }
 
-  // Execution succeeded
-  terminalStatus.textContent = "Accepted / Success";
+  // Execution succeeded (Run finished with exit code 0)
+  terminalStatus.textContent = "Finished";
   terminalStatus.className = "status-pill status-done";
   const displayOutput = result.stdout || "(Process finished successfully with no output)";
   latestTerminalOutput = displayOutput;
@@ -285,40 +308,55 @@ submitBtn.addEventListener("click", async () => {
     return;
   }
 
+  const opSeq = ++activeAsyncOpId;
+  const targetPid = currentProblem.id;
+  const targetTitle = currentProblem.title;
+
   terminalStatus.textContent = "Running";
   terminalStatus.className = "status-pill status-running";
   submitBtn.disabled = true;
-  terminalConsole.textContent = `$ Compiling and executing against test suite for Problem ${currentProblem.id} (${currentProblem.title})...`;
+  terminalConsole.textContent = `$ Compiling and executing against test suite for Problem ${targetPid} (${targetTitle})...`;
 
-  const testResult = await submitSolution(currentProblem.id, code);
+  const testResult = await submitSolution(targetPid, code);
+
+  // Discard stale response if another operation or problem switch occurred
+  if (opSeq !== activeAsyncOpId || currentProblem.id !== targetPid) {
+    return;
+  }
+
   submitBtn.disabled = false;
+
+  const verdict = testResult && testResult.verdict ? testResult.verdict : "Submission Error";
+  const isAccepted = verdict === "Accepted";
 
   // Track problem submission and verdict (genuine Accepted marks solved)
   if (currentUser) {
-    const isAccepted = testResult.verdict === "Accepted";
-    trackProblemProgress(currentUser.uid, currentProblem.id, {
+    trackProblemProgress(currentUser.uid, targetPid, {
       attempted: true,
       solved: isAccepted
     });
   }
 
-  terminalStatus.textContent = testResult.verdict;
-  if (testResult.verdict === "Accepted") {
+  terminalStatus.textContent = verdict;
+  if (isAccepted) {
     terminalStatus.className = "status-pill status-done";
-  } else if (testResult.verdict === "Time Limit Exceeded") {
+  } else if (verdict === "Time Limit Exceeded") {
     terminalStatus.className = "status-pill status-tle";
   } else {
     terminalStatus.className = "status-pill status-error";
   }
 
+  const executionTime = testResult && testResult.executionTime ? testResult.executionTime : "0.00";
+  const details = testResult && testResult.details ? testResult.details : "No details returned.";
+
   const banner = 
 `============================================================
-SUBMISSION VERDICT: ${testResult.verdict.toUpperCase()}
-Problem:            #${currentProblem.id} - ${currentProblem.title}
-Execution Time:     ${testResult.executionTime}s
+SUBMISSION VERDICT: ${verdict.toUpperCase()}
+Problem:            #${targetPid} - ${targetTitle}
+Execution Time:     ${executionTime}s
 ============================================================
 
-${testResult.details}`;
+${details}`;
 
   latestTerminalOutput = banner;
   terminalConsole.textContent = banner;
@@ -353,7 +391,7 @@ clearTerminalBtn.addEventListener("click", () => {
    ============================================================================== */
 
 /**
- * Updates Get Hint and Next Hint buttons based on current problem's hint level.
+ * Updates Get Hint and Next Hint buttons based on current problem's hint level (1 to 4).
  */
 function updateHintButtons() {
   const pid = currentProblem?.id || 1;
@@ -365,18 +403,18 @@ function updateHintButtons() {
     getHintBtn.innerHTML = "<span>💡</span> Get Hint";
     getHintBtn.disabled = isAiBusy;
     nextHintBtn.style.display = "none";
-  } else if (level <= 5) {
+  } else if (level <= 4) {
     getHintBtn.style.display = "none";
     nextHintBtn.style.display = "inline-flex";
-    nextHintBtn.innerHTML = `<span>💡</span> Next Hint (${level}/5)`;
+    nextHintBtn.innerHTML = `<span>💡</span> Next Hint (${level}/4)`;
     nextHintBtn.disabled = isAiBusy;
-    nextHintBtn.title = `Ask AI for Hint Level ${level} of 5`;
+    nextHintBtn.title = `Ask AI for Hint Level ${level} of 4`;
   } else {
     getHintBtn.style.display = "none";
     nextHintBtn.style.display = "inline-flex";
     nextHintBtn.innerHTML = `<span>💡</span> All Hints Given`;
     nextHintBtn.disabled = true;
-    nextHintBtn.title = "All 5 progressive hints have been unlocked";
+    nextHintBtn.title = "All 4 progressive hints have been unlocked";
   }
 }
 
@@ -445,6 +483,67 @@ function appendChatMessage(sender, text) {
 }
 
 /**
+ * Appends an AI message with interactive choice buttons (e.g. for Full-Code Consent).
+ */
+function appendChatMessageWithChoices(aiText, choices = []) {
+  const pid = currentProblem?.id || 1;
+  if (!problemChatHistory[pid]) {
+    problemChatHistory[pid] = [];
+  }
+  problemChatHistory[pid].push({
+    role: "assistant",
+    text: aiText
+  });
+
+  const row = document.createElement("div");
+  row.className = "chat-message-row ai";
+
+  const label = document.createElement("span");
+  label.className = "chat-sender-label";
+  label.textContent = "AI MENTOR";
+
+  const bubble = document.createElement("div");
+  bubble.className = "chat-bubble";
+  bubble.innerHTML = formatMarkdown(aiText);
+
+  if (Array.isArray(choices) && choices.length > 0) {
+    const choicesGroup = document.createElement("div");
+    choicesGroup.className = "chat-choices-group";
+
+    for (const choice of choices) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = `btn-chat-choice ${choice.action === "full_code" ? "choice-fullcode" : "choice-hints"}`;
+      btn.textContent = choice.label;
+      btn.addEventListener("click", () => {
+        // Disable choices once selected
+        const allBtns = choicesGroup.querySelectorAll("button");
+        allBtns.forEach(b => (b.disabled = true));
+
+        if (choice.action === "full_code") {
+          problemFullCodeConsent[currentProblem.id] = true;
+          sendAiInteraction({
+            message: "Show full code",
+            requestType: "chat",
+            fullCodeConsent: true
+          });
+        } else if (choice.action === "hints") {
+          handleHintRequest();
+        }
+      });
+      choicesGroup.appendChild(btn);
+    }
+    bubble.appendChild(choicesGroup);
+  }
+
+  row.appendChild(label);
+  row.appendChild(bubble);
+
+  chatMessagesContainer.insertBefore(row, aiThinkingRow);
+  chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
+}
+
+/**
  * Sets busy loading state on UI elements.
  */
 function setAiBusyState(busy) {
@@ -454,7 +553,7 @@ function setAiBusyState(busy) {
   if (nextHintBtn) {
     const pid = currentProblem?.id || 1;
     const level = problemHintLevels[pid] || 1;
-    nextHintBtn.disabled = busy || (level > 5);
+    nextHintBtn.disabled = busy || (level > 4);
   }
   if (chatInput) chatInput.disabled = busy;
 
@@ -467,19 +566,47 @@ function setAiBusyState(busy) {
 
 /**
  * Unified pipeline for sending user chat messages and progressive hint requests.
+ * Uses real-time progressive token streaming via SSE.
  */
-async function sendAiInteraction({ message, requestType = "chat", hintLevel = null }) {
+async function sendAiInteraction({
+  message,
+  requestType = "chat",
+  hintLevel = null,
+  fullCodeConsent = false,
+  isRetry = false
+}) {
   if (isAiBusy) return;
 
   const pid = currentProblem?.id || 1;
   const history = problemChatHistory[pid] || [];
 
-  // 1. Add user message to UI and history
-  appendChatMessage("user", message);
+  // 1. Add user message to UI and history (unless repeating via retry)
+  if (!isRetry) {
+    appendChatMessage("user", message);
+  }
 
   // 2. Set busy state
   setAiBusyState(true);
+
+  // 3. Prepare AI message bubble in DOM for progressive streaming
+  const aiRow = document.createElement("div");
+  aiRow.className = "chat-message-row ai";
+
+  const label = document.createElement("span");
+  label.className = "chat-sender-label";
+  label.textContent = "AI MENTOR";
+
+  const bubble = document.createElement("div");
+  bubble.className = "chat-bubble";
+  bubble.innerHTML = `<span class="streaming-cursor">Analyzing C++ context...</span>`;
+
+  aiRow.appendChild(label);
+  aiRow.appendChild(bubble);
+
+  chatMessagesContainer.insertBefore(aiRow, aiThinkingRow);
   chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
+
+  let streamStarted = false;
 
   try {
     const aiResponse = await sendChatMessage({
@@ -494,11 +621,29 @@ async function sendAiInteraction({ message, requestType = "chat", hintLevel = nu
       terminalOutput: latestTerminalOutput,
       hintMode: hintModeSelect ? hintModeSelect.value : "NORMAL",
       previousHints: problemPreviousHints[currentProblem.id] || [],
-      chatHistory: history
+      chatHistory: history,
+      fullCodeConsent: fullCodeConsent || problemFullCodeConsent[currentProblem.id] || false,
+      onToken: (_chunk, accumulatedText) => {
+        if (!streamStarted) {
+          streamStarted = true;
+          aiThinkingRow.classList.remove("is-active");
+        }
+        bubble.innerHTML = formatMarkdown(accumulatedText);
+        chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
+      }
     });
 
-    // 3. Append AI response formatted with Markdown
-    appendChatMessage("ai", aiResponse);
+    // Final formatted render
+    bubble.innerHTML = formatMarkdown(aiResponse);
+
+    // Record in problem chat history
+    if (!problemChatHistory[pid]) {
+      problemChatHistory[pid] = [];
+    }
+    problemChatHistory[pid].push({
+      role: "assistant",
+      text: aiResponse
+    });
 
     // 4. If this was a progressive hint, record it and advance hint level
     if (requestType === "hint") {
@@ -508,14 +653,42 @@ async function sendAiInteraction({ message, requestType = "chat", hintLevel = nu
       problemPreviousHints[currentProblem.id].push(aiResponse);
 
       const currentLvl = problemHintLevels[currentProblem.id] || 1;
-      if (currentLvl < 5) {
+      if (currentLvl <= 4) {
         problemHintLevels[currentProblem.id] = currentLvl + 1;
       }
       updateHintButtons();
     }
+
+    lastFailedInteraction = null;
+  } catch (error) {
+    console.error("AI Interaction Error:", error);
+    lastFailedInteraction = { message, requestType, hintLevel, fullCodeConsent };
+
+    bubble.innerHTML = `
+      <div class="chat-error-box">
+        <span style="color: var(--danger); font-weight: 600;">⚠️ ${formatMarkdown(error.message || "Could not reach AI Mentor. Ollama may be busy or unavailable.")}</span>
+        <div class="chat-error-actions">
+          <button type="button" class="btn-chat-retry">↺ Retry Request</button>
+        </div>
+      </div>
+    `;
+
+    const retryBtn = bubble.querySelector(".btn-chat-retry");
+    if (retryBtn) {
+      retryBtn.addEventListener("click", () => {
+        aiRow.remove();
+        if (lastFailedInteraction) {
+          sendAiInteraction({
+            ...lastFailedInteraction,
+            isRetry: true
+          });
+        }
+      });
+    }
   } finally {
     setAiBusyState(false);
     updateHintButtons();
+    chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
   }
 }
 
@@ -527,7 +700,7 @@ function handleHintRequest() {
   const pid = currentProblem?.id || 1;
   const level = problemHintLevels[pid] || 1;
 
-  if (level > 5) return;
+  if (level > 4) return;
 
   const userText = level === 1 ? "Give me a hint." : "Give me the next hint, please.";
 
@@ -547,7 +720,7 @@ if (nextHintBtn) {
 }
 
 /**
- * Ordinary chat handler
+ * Ordinary chat handler with greeting fast-path and full-code consent check
  */
 function handleSendChatMessage() {
   if (isAiBusy) return;
@@ -556,10 +729,35 @@ function handleSendChatMessage() {
   if (!message) return;
 
   chatInput.value = "";
+
+  // 1. Instant greeting fast path (0ms delay, no Ollama inference)
+  const fastGreeting = getFastGreetingResponse(message);
+  if (fastGreeting) {
+    appendChatMessage("user", message);
+    appendChatMessage("ai", fastGreeting);
+    return;
+  }
+
+  // 2. Full-code request consent check
+  const wantsFullCode = isFullCodeRequest(message);
+  if (wantsFullCode && !problemFullCodeConsent[currentProblem.id]) {
+    appendChatMessage("user", message);
+    appendChatMessageWithChoices(
+      "I can guide you with progressive hints or show the complete C++ solution. Which would you prefer?",
+      [
+        { label: "💡 Give me hints", action: "hints" },
+        { label: "💻 Show full code", action: "full_code" }
+      ]
+    );
+    return;
+  }
+
+  // 3. Standard AI mentor interaction
   sendAiInteraction({
     message: message,
     requestType: "chat",
-    hintLevel: null
+    hintLevel: null,
+    fullCodeConsent: wantsFullCode && problemFullCodeConsent[currentProblem.id]
   });
 }
 

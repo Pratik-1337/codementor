@@ -19,14 +19,14 @@ export const PROBLEMS = [
     statement: `Given an array of integers <code>nums</code> and an integer <code>target</code>, return <em>the indices of the two numbers such that they add up to <code>target</code></em>.<br><br>You may assume that each input would have <strong>exactly one solution</strong>, and you may not use the same element twice. You can return the answer in any order.`,
     examples: [
       {
-        input: "nums = [2,7,11,15], target = 9",
-        output: "[0,1]",
-        explanation: "Because nums[0] + nums[1] == 9, we return [0, 1]."
+        input: "nums = [3, 2, 4], target = 6",
+        output: "[1, 2]",
+        explanation: "Because nums[1] + nums[2] == 6, we return [1, 2]."
       },
       {
-        input: "nums = [3,2,4], target = 6",
-        output: "[1,2]",
-        explanation: "Because nums[1] + nums[2] == 6, we return [1, 2]."
+        input: "nums = [2, 7, 11, 15], target = 9",
+        output: "[0, 1]",
+        explanation: "Because nums[0] + nums[1] == 9, we return [0, 1]."
       }
     ],
     constraints: [
@@ -49,10 +49,10 @@ vector<int> twoSum(vector<int>& nums, int target) {
 }
 
 int main() {
-    vector<int> nums = {2, 7, 11, 15};
-    int target = 9;
+    vector<int> nums = {3, 2, 4};
+    int target = 6;
 
-    cout << "Input: nums = [2, 7, 11, 15], target = 9" << endl;
+    cout << "Input: nums = [3, 2, 4], target = 6" << endl;
     vector<int> result = twoSum(nums, target);
 
     if (result.size() == 2) {
@@ -62,7 +62,7 @@ int main() {
     }
     return 0;
 }`,
-    defaultStdin: "4\n2 7 11 15\n9"
+    defaultStdin: "3\n3 2 4\n6"
   },
   {
     id: 2,

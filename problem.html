@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,7 +14,8 @@
     }
   </style>
 </head>
-<body>
+
+<body class="problem-page">
 
   <!-- Loading State while checking Firebase Auth -->
   <div id="loadingScreen" class="loading-screen">
@@ -25,9 +27,10 @@
 
   <!-- Protected Problem Workspace Container -->
   <div id="problemWorkspace">
-    
+
     <!-- Top Navigation Bar -->
-    <header class="dashboard-navbar" style="max-width: 1750px; margin: 0 auto 16px; border-radius: 0 0 var(--radius-lg) var(--radius-lg);">
+    <header class="dashboard-navbar"
+      style="max-width: 1750px; margin: 0 auto 16px; border-radius: 0 0 var(--radius-lg) var(--radius-lg);">
       <div style="display: flex; align-items: center;">
         <a href="dashboard.html" class="brand-logo" aria-label="CodeMentor Home">
           <span class="brand-badge">&lt;/&gt;</span>
@@ -50,7 +53,8 @@
             <span class="user-email" id="navUserEmail">loading@codementor.dev</span>
           </div>
         </div>
-        <button type="button" id="logoutBtn" class="btn btn-secondary" style="width: auto; padding: 6px 14px; font-size: 12.5px;">
+        <button type="button" id="logoutBtn" class="btn btn-secondary"
+          style="width: auto; padding: 6px 14px; font-size: 12.5px;">
           Log Out
         </button>
       </div>
@@ -58,27 +62,29 @@
 
     <!-- Main 3-Column Workspace Layout -->
     <main class="workspace-3col-layout">
-      
+
       <!-- ==========================================
            LEFT COLUMN: Problem Statement Panel (26%)
            ========================================== -->
       <section class="problem-panel" aria-label="Problem Description">
-        
+
         <div class="problem-meta-row">
           <span id="problemDifficultyBadge" class="badge-difficulty-easy">Easy</span>
-          <span id="problemNumberLabel" style="font-size: 11.5px; color: var(--text-muted); font-family: var(--font-mono);">Problem #1</span>
+          <span id="problemNumberLabel"
+            style="font-size: 11.5px; color: var(--text-muted); font-family: var(--font-mono);">Problem #1</span>
         </div>
 
         <h1 id="problemTitleHeader" class="problem-title">Two Sum</h1>
 
         <div id="problemContentContainer">
           <p class="problem-description">
-            Given an array of integers <code>nums</code> and an integer <code>target</code>, return 
+            Given an array of integers <code>nums</code> and an integer <code>target</code>, return
             <em>the indices of the two numbers such that they add up to <code>target</code></em>.
           </p>
 
           <p class="problem-description">
-            You may assume that each input would have <strong>exactly one solution</strong>, and you may not use the same element twice.
+            You may assume that each input would have <strong>exactly one solution</strong>, and you may not use the
+            same element twice.
           </p>
 
           <p class="problem-description">
@@ -88,16 +94,17 @@
           <!-- Example 1 -->
           <h2 class="problem-section-title">Example 1</h2>
           <div class="example-card">
-            <div class="example-line"><span class="example-label">Input:</span> <span class="example-val">nums = [2,7,11,15], target = 9</span></div>
-            <div class="example-line"><span class="example-val">Output:</span> <span class="example-val">[0,1]</span></div>
-            <div class="example-line"><span class="example-label">Explanation:</span> <span class="example-val">Because nums[0] + nums[1] == 9, we return [0, 1].</span></div>
+            <div class="example-line"><span class="example-label">Input:</span> <span class="example-val">nums = [3, 2, 4], target = 6</span></div>
+            <div class="example-line"><span class="example-val">Output:</span> <span class="example-val">[1, 2]</span></div>
+            <div class="example-line"><span class="example-label">Explanation:</span> <span class="example-val">Because nums[1] + nums[2] == 6, we return [1, 2].</span></div>
           </div>
 
           <!-- Example 2 -->
           <h2 class="problem-section-title">Example 2</h2>
           <div class="example-card">
-            <div class="example-line"><span class="example-label">Input:</span> <span class="example-val">nums = [3,2,4], target = 6</span></div>
-            <div class="example-line"><span class="example-label">Output:</span> <span class="example-val">[1,2]</span></div>
+            <div class="example-line"><span class="example-label">Input:</span> <span class="example-val">nums = [2, 7, 11, 15], target = 9</span></div>
+            <div class="example-line"><span class="example-label">Output:</span> <span class="example-val">[0, 1]</span></div>
+            <div class="example-line"><span class="example-label">Explanation:</span> <span class="example-val">Because nums[0] + nums[1] == 9, we return [0, 1].</span></div>
           </div>
 
           <!-- Constraints -->
@@ -116,7 +123,7 @@
            CENTER COLUMN: C++ Editor & Terminal (48%)
            ========================================== -->
       <section class="editor-center-panel" aria-label="C++ Code Editor and Terminal">
-        
+
         <!-- Editor Header & Toolbar -->
         <div class="editor-toolbar">
           <div class="toolbar-left">
@@ -142,7 +149,8 @@
             <button type="button" id="getHintBtn" class="btn-get-hint" title="Ask AI for progressive guidance">
               <span>💡</span> Get Hint
             </button>
-            <button type="button" id="nextHintBtn" class="btn-get-hint" style="display: none;" title="Ask AI for the next progressive hint">
+            <button type="button" id="nextHintBtn" class="btn-get-hint" style="display: none;"
+              title="Ask AI for the next progressive hint">
               <span>💡</span> Next Hint
             </button>
             <button type="button" id="runCodeBtn" class="btn-run" title="Compile and run C++ code">
@@ -166,20 +174,6 @@
           <div id="editorContainer"></div>
         </div>
 
-        <!-- Custom Input (stdin) Card -->
-        <div class="custom-input-card">
-          <div class="custom-input-header">
-            <span>Custom Input (stdin)</span>
-            <span style="font-weight: normal; color: var(--text-muted);">Passed to std::cin</span>
-          </div>
-          <textarea 
-            id="customStdinInput" 
-            class="custom-stdin-textarea" 
-            placeholder="Enter custom input for cin (e.g. 2 7 11 15)"
-            rows="2"
-          ></textarea>
-        </div>
-
         <!-- Terminal Output Panel -->
         <div class="terminal-panel">
           <div class="terminal-header">
@@ -192,7 +186,8 @@
               Clear
             </button>
           </div>
-          <pre id="terminalConsole" class="terminal-console">$ Ready to compile and execute C++. Click 'Run Code' or 'Submit'.</pre>
+          <pre id="terminalConsole"
+            class="terminal-console">$ Ready to compile and execute C++. Click 'Run Code' or 'Submit'.</pre>
         </div>
 
       </section>
@@ -201,7 +196,7 @@
            RIGHT COLUMN: AI Mentor Sidebar (26%)
            ========================================== -->
       <aside class="ai-sidebar-panel" aria-label="AI Mentor Assistant">
-        
+
         <!-- Sidebar Header -->
         <div class="ai-sidebar-header">
           <div class="ai-sidebar-title">
@@ -216,14 +211,15 @@
 
         <!-- Scrollable Chat Stream -->
         <div id="chatMessagesContainer" class="chat-messages-container">
-          
+
           <!-- Default Welcome Message from AI Mentor -->
           <div class="chat-message-row ai">
             <span class="chat-sender-label">AI MENTOR</span>
             <div class="chat-bubble">
               Hello! I am your <strong>CodeMentor AI</strong>.
               <br><br>
-              I inspect your <strong>actual C++ code</strong> and terminal diagnostics in real time. Ask me why you have a logic bug, how to fix compiler errors, or how to optimize your time complexity!
+              I inspect your <strong>actual C++ code</strong> and terminal diagnostics in real time. Ask me why you have
+              a logic bug, how to fix compiler errors, or how to optimize your time complexity!
             </div>
           </div>
 
@@ -238,17 +234,14 @@
         <!-- Chat Input Footer -->
         <div class="chat-input-footer">
           <div class="chat-input-row">
-            <textarea 
-              id="chatInput" 
-              class="chat-textarea" 
-              placeholder="Ask about your code, errors, or algorithm..."
-              rows="2"
-            ></textarea>
+            <textarea id="chatInput" class="chat-textarea" placeholder="Ask about your code, errors, or algorithm..."
+              rows="2"></textarea>
             <button type="button" id="sendChatBtn" class="btn-send-chat" title="Send message to AI Mentor">
               Send
             </button>
           </div>
-          <span class="chat-shortcut-hint">Press <strong>Enter</strong> to send, <strong>Shift + Enter</strong> for newline</span>
+          <span class="chat-shortcut-hint">Press <strong>Enter</strong> to send, <strong>Shift + Enter</strong> for
+            newline</span>
         </div>
 
       </aside>
@@ -263,4 +256,5 @@
   <!-- Problem Workspace Modular Vanilla JavaScript -->
   <script type="module" src="js/workspace.js"></script>
 </body>
+
 </html>

@@ -865,14 +865,39 @@ a:hover {
    Coding Workspace & Problem Page - 3-Column Layout
    Left: Problem (26%) | Center: C++ Editor + Terminal (48%) | Right: AI Mentor (26%)
    ========================================================================== */
+body.problem-page {
+  height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
+}
+
+#problemWorkspace {
+  height: 100vh;
+  max-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#problemWorkspace .dashboard-navbar {
+  flex-shrink: 0;
+  margin-bottom: 10px !important;
+}
+
 .workspace-3col-layout {
   display: grid;
   grid-template-columns: 26% 48% 26%;
   gap: 16px;
   max-width: 1750px;
+  width: 100%;
   margin: 0 auto;
-  padding: 0 16px 20px;
-  min-height: calc(100vh - 90px);
+  padding: 0 16px 12px;
+  flex: 1 1 0;
+  min-height: 0;
+  height: calc(100vh - 80px);
+  max-height: calc(100vh - 80px);
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 /* --------------------------------------------------------------------------
@@ -882,11 +907,16 @@ a:hover {
   background-color: var(--bg-surface);
   border: 1px solid var(--border-default);
   border-radius: var(--radius-lg);
-  padding: 22px 24px;
+  padding: 20px 22px;
   overflow-y: auto;
-  max-height: calc(100vh - 105px);
+  overflow-x: hidden;
+  height: 100%;
+  max-height: 100%;
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .problem-meta-row {
@@ -1003,18 +1033,23 @@ a:hover {
 .editor-center-panel {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  max-height: calc(100vh - 105px);
-  overflow-y: auto;
-  padding-right: 2px;
+  gap: 8px;
+  height: 100%;
+  max-height: 100%;
+  overflow: hidden;
+  min-height: 0;
+  min-width: 0;
+  box-sizing: border-box;
+  padding-right: 0;
 }
 
 /* Editor Toolbar */
 .editor-toolbar {
+  flex-shrink: 0;
   background-color: var(--bg-surface);
   border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
-  padding: 8px 14px;
+  padding: 6px 12px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -1156,16 +1191,22 @@ a:hover {
 
 /* Monaco Editor Container */
 .editor-wrapper {
+  flex: 3 1 0;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
   background-color: var(--bg-surface);
   border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
   overflow: hidden;
+  box-sizing: border-box;
 }
 
 .editor-header-tab {
+  flex-shrink: 0;
   background-color: var(--bg-surface-elevated);
   border-bottom: 1px solid var(--border-default);
-  padding: 6px 14px;
+  padding: 5px 12px;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1183,63 +1224,31 @@ a:hover {
 }
 
 #editorContainer {
+  flex: 1 1 0;
   width: 100%;
-  height: 340px;
-  min-height: 280px;
+  height: 100%;
+  min-height: 0;
+  position: relative;
 }
 
-/* Custom Input (stdin) Box */
-.custom-input-card {
-  background-color: var(--bg-surface);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-md);
-  overflow: hidden;
-}
-
-.custom-input-header {
-  background-color: var(--bg-surface-elevated);
-  border-bottom: 1px solid var(--border-default);
-  padding: 6px 14px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-secondary);
-}
-
-.custom-stdin-textarea {
-  width: 100%;
-  background-color: var(--bg-input);
-  border: none;
-  color: var(--text-primary);
-  font-family: var(--font-mono);
-  font-size: 12.5px;
-  padding: 8px 12px;
-  height: 48px;
-  resize: vertical;
-  outline: none;
-  line-height: 1.4;
-}
-
-.custom-stdin-textarea::placeholder {
-  color: var(--text-muted);
-}
-
-/* Terminal Panel */
+/* Terminal Panel - Fills available vertical space below editor */
 .terminal-panel {
+  flex: 2 1 0;
+  min-height: 140px;
   background-color: var(--bg-surface);
   border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  box-sizing: border-box;
 }
 
 .terminal-header {
+  flex-shrink: 0;
   background-color: var(--bg-surface-elevated);
   border-bottom: 1px solid var(--border-default);
-  padding: 7px 14px;
+  padding: 6px 12px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1249,7 +1258,7 @@ a:hover {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--text-primary);
   font-family: var(--font-mono);
@@ -1313,15 +1322,17 @@ a:hover {
 }
 
 .terminal-console {
-  padding: 12px 14px;
+  flex: 1 1 auto;
+  padding: 10px 14px;
   font-family: var(--font-mono);
-  font-size: 12.5px;
+  font-size: 12px;
   line-height: 1.5;
   color: #c9d1d9;
-  min-height: 140px;
-  max-height: 220px;
+  min-height: 0;
   overflow-y: auto;
+  overflow-x: auto;
   white-space: pre-wrap;
+  word-break: break-word;
   background-color: #04070b;
 }
 
@@ -1334,12 +1345,18 @@ a:hover {
   border-radius: var(--radius-lg);
   display: flex;
   flex-direction: column;
-  max-height: calc(100vh - 105px);
+  height: 100%;
+  max-height: 100%;
   overflow: hidden;
+  min-height: 0;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .ai-sidebar-header {
-  padding: 14px 18px;
+  flex-shrink: 0;
+  padding: 12px 16px;
   background-color: var(--bg-surface-elevated);
   border-bottom: 1px solid var(--border-default);
   display: flex;
@@ -1435,19 +1452,27 @@ a:hover {
 
 /* Chat Messages Container */
 .chat-messages-container {
-  flex: 1;
-  padding: 16px;
+  flex: 1 1 0;
+  padding: 14px 16px;
   overflow-y: auto;
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
+  min-height: 0;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 /* Message Bubbles */
 .chat-message-row {
   display: flex;
   flex-direction: column;
-  max-width: 92%;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .chat-message-row.user {
@@ -1472,7 +1497,11 @@ a:hover {
   border-radius: var(--radius-md);
   font-size: 13px;
   line-height: 1.5;
-  word-break: break-word;
+  box-sizing: border-box;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .chat-message-row.user .chat-bubble {
@@ -1480,6 +1509,8 @@ a:hover {
   color: #ffffff;
   border-bottom-right-radius: 2px;
   white-space: pre-wrap;
+  max-width: 88%;
+  word-break: break-word;
 }
 
 .chat-message-row.ai .chat-bubble {
@@ -1487,10 +1518,13 @@ a:hover {
   border: 1px solid var(--border-default);
   color: var(--text-primary);
   border-bottom-left-radius: 2px;
+  width: 100%;
 }
 
 .chat-bubble p {
   margin: 0 0 8px 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 .chat-bubble p:last-child {
@@ -1513,6 +1547,8 @@ a:hover {
   font-family: var(--font-mono);
   font-size: 12px;
   color: #79c0ff;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .chat-message-row.user .chat-bubble code {
@@ -1526,7 +1562,10 @@ a:hover {
   border-radius: var(--radius-sm);
   padding: 10px 12px;
   margin: 8px 0;
+  max-width: 100%;
   overflow-x: auto;
+  overflow-y: hidden;
+  box-sizing: border-box;
 }
 
 .chat-bubble pre code {
@@ -1538,16 +1577,22 @@ a:hover {
   line-height: 1.45;
   white-space: pre;
   color: var(--text-primary);
+  display: block;
+  overflow-wrap: normal;
+  word-break: normal;
 }
 
 .chat-bubble ul, .chat-bubble ol {
-  margin: 6px 0 8px 20px;
+  margin: 6px 0 8px 18px;
   padding: 0;
+  box-sizing: border-box;
+  max-width: 100%;
 }
 
 .chat-bubble li {
   margin-bottom: 4px;
   line-height: 1.45;
+  overflow-wrap: anywhere;
 }
 
 /* AI Thinking Indicator */
@@ -1579,24 +1624,122 @@ a:hover {
   to { opacity: 1; transform: scale(1.2); }
 }
 
+/* Streaming and interactive components */
+.streaming-cursor {
+  display: inline-block;
+  color: var(--text-secondary);
+  font-style: italic;
+  font-size: 12px;
+}
+
+.chat-choices-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.btn-chat-choice {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all var(--transition-fast);
+}
+
+.btn-chat-choice:hover:not(:disabled) {
+  background-color: var(--bg-surface-elevated);
+  transform: translateY(-1px);
+}
+
+.btn-chat-choice:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.btn-chat-choice.choice-fullcode {
+  border-color: rgba(56, 189, 248, 0.4);
+  color: var(--accent-primary);
+}
+
+.btn-chat-choice.choice-fullcode:hover:not(:disabled) {
+  background-color: rgba(56, 189, 248, 0.15);
+}
+
+.btn-chat-choice.choice-hints {
+  border-color: var(--warning-border);
+  color: #e3b341;
+}
+
+.btn-chat-choice.choice-hints:hover:not(:disabled) {
+  background-color: rgba(210, 153, 34, 0.15);
+}
+
+.chat-error-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chat-error-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-chat-retry {
+  background-color: rgba(248, 81, 73, 0.15);
+  border: 1px solid var(--danger-border);
+  color: #ff7b72;
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: background-color var(--transition-fast);
+}
+
+.btn-chat-retry:hover {
+  background-color: rgba(248, 81, 73, 0.3);
+}
+
 /* Chat Input Footer */
 .chat-input-footer {
-  padding: 12px 14px;
+  flex-shrink: 0;
+  padding: 10px 14px;
   background-color: var(--bg-surface-elevated);
   border-top: 1px solid var(--border-default);
   display: flex;
   flex-direction: column;
   gap: 6px;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .chat-input-row {
   display: flex;
   gap: 8px;
   align-items: flex-end;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .chat-textarea {
-  flex: 1;
+  flex: 1 1 0;
+  min-width: 0;
   background-color: var(--bg-input);
   border: 1px solid var(--border-default);
   border-radius: var(--radius-sm);
@@ -1608,6 +1751,7 @@ a:hover {
   height: 48px;
   outline: none;
   line-height: 1.4;
+  box-sizing: border-box;
   transition: border-color var(--transition-fast);
 }
 
@@ -1658,19 +1802,47 @@ a:hover {
 }
 
 @media (max-width: 900px) {
+  body.problem-page {
+    height: auto;
+    max-height: none;
+    overflow-y: auto;
+  }
+
+  #problemWorkspace {
+    height: auto;
+    max-height: none;
+    overflow: visible;
+  }
+
   .workspace-3col-layout {
     grid-template-columns: 1fr;
+    height: auto;
+    max-height: none;
+    overflow: visible;
   }
 
   .problem-panel,
   .editor-center-panel,
   .ai-sidebar-panel {
     max-height: none;
+    height: auto;
     grid-column: span 1;
   }
 
+  .editor-wrapper {
+    height: 380px;
+    min-height: 300px;
+    flex: none;
+  }
+
   #editorContainer {
-    height: 320px;
+    height: 100%;
+  }
+
+  .terminal-panel {
+    height: 260px;
+    min-height: 180px;
+    flex: none;
   }
 }
 

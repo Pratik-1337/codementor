@@ -1,18 +1,23 @@
 {
   "name": "codementor",
   "version": "1.0.0",
-  "description": "CodeMentor - C++ DSA Learning Platform with OpenRouter AI Mentor",
+  "description": "CodeMentor - C++ DSA Learning Platform with Local Ollama AI Mentor & Cloudflare Quick Tunnel",
   "type": "module",
   "scripts": {
     "start": "node server/server.js",
-    "dev": "node server/server.js"
+    "dev": "node server/server.js",
+    "tunnel": "powershell -ExecutionPolicy Bypass -File ./scripts/start-tunnel.ps1",
+    "verify:ollama": "powershell -ExecutionPolicy Bypass -File ./scripts/verify-ollama.ps1",
+    "start:all": "powershell -ExecutionPolicy Bypass -File ./scripts/start-all.ps1"
   },
   "keywords": [
     "codementor",
     "cpp",
     "dsa",
-    "openrouter",
-    "monaco-editor"
+    "ollama",
+    "qwen2.5-coder",
+    "monaco-editor",
+    "cloudflare-tunnel"
   ],
   "author": "",
   "license": "ISC"

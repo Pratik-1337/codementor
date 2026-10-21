@@ -1,34 +1,40 @@
-# CodeMentor 🚀
+# CodeMentor 🚀 (Local AI Edition)
 ### *"Learn to solve. Don't just get the answer."*
 
-A modern, web-based C++ Data Structures & Algorithms (DSA) learning and practice platform built for a Computer Science mini-project.
-
-Unlike standard chatbots that output complete solutions immediately and harm algorithmic thinking, **CodeMentor** provides:
-1. **Interactive C++ Monaco Workspace**: In-browser C++ editor with real remote compilation via Wandbox (GCC 14), custom `stdin` support, and automated test-case evaluation.
-2. **Progressive AI Mentor**: Context-aware AI assistant powered by OpenRouter that inspects the student's actual code and runtime diagnostics, offering 5 progressive hint levels across HARD, NORMAL, and EASY modes.
-3. **Secure Authentication & Profiles**: Email/Password authentication and user profiles powered by Google Firebase (Authentication & Cloud Firestore).
+A modern, web-based C++ Data Structures & Algorithms (DSA) learning and practice platform running **100% locally on your laptop** with **Ollama (`qwen2.5-coder:7b`)** and accessible anywhere over the internet via a free **Cloudflare Quick Tunnel**.
 
 ---
 
-## 📂 Final Project Folder Structure
+## 🌟 Key Highlights
+
+- **100% Free & Zero Cloud AI Cost (₹0)**: Powered entirely by your local Ollama instance (`qwen2.5-coder:7b`). No OpenRouter API key, subscription, or paid cloud inference needed.
+- **Hosted Entirely from Your Laptop**: Node.js serves the frontend application and AI API from a single unified server origin.
+- **Accessible Over the Internet (Cloudflare Quick Tunnel)**: Generate a temporary, secure HTTPS public URL (`https://....trycloudflare.com`) in seconds without port forwarding, dynamic DNS, or firewall changes.
+- **Socratic 5-Stage Progressive AI Hints**: Context-aware AI assistant that analyzes the student's actual live C++ code from Monaco Editor, terminal output, and provides one concise hint at a time across HARD, NORMAL, and EASY modes.
+- **Real Remote C++ Execution (Wandbox GCC Head)**: Real compiler diagnostics, stdout, stderr, execution timing, and automated test cases. Completely independent from AI inference.
+- **Secure Architecture**: Server-side isolation prevents external visitors or the browser from accessing Ollama's port 11434 directly. Includes request validation, concurrency throttling, and rate limiting.
+
+---
+
+## 📂 Project Structure
 
 ```text
-CodeMentor/
-├── .env                  # Server secrets (OPENROUTER_API_KEY, PORT) - Never committed
-├── .env.example          # Environment variables template
+CodeMentor Local/
+├── .env                  # Server configuration (OLLAMA_MODEL, PORT) - Never committed
+├── .env.example          # Template configuration file
 ├── .gitignore            # Ignores .env and OS/Node artifacts
-├── index.html            # Landing page introducing the platform
-├── login.html            # User sign-in page
-├── register.html         # User registration with live password checklist & strength meter
-├── forgot-password.html  # Password reset page (Firebase Auth email trigger)
-├── dashboard.html        # Protected student dashboard & profile
-├── problem.html          # 3-column C++ practice workspace (Problem | Editor & Terminal | AI Mentor)
-├── package.json          # Node scripts ("start" / "dev")
+├── package.json          # npm startup and management scripts
 ├── README.md             # Project documentation and viva guide
+├── index.html            # Landing page
+├── login.html            # User sign-in page
+├── register.html         # User registration with live password checklist
+├── forgot-password.html  # Password reset page (Firebase Auth)
+├── dashboard.html        # Protected student dashboard & problem progress
+├── problem.html          # 3-column C++ practice workspace (Problem | Editor & Terminal | AI Mentor)
 ├── css/
-│   └── style.css         # Single unified stylesheet (VS Code / GitHub Dark theme)
+│   └── style.css         # Single unified dark theme stylesheet (VS Code / LeetCode inspired)
 ├── js/
-│   ├── firebase-config.js # Firebase app, auth, and Firestore initialization
+│   ├── firebase-config.js # Firebase modular SDK initialization
 │   ├── auth.js            # Shared auth helpers (error messages, password toggle, logout)
 │   ├── register.js        # Registration form validation, password checklist, Firestore save
 │   ├── login.js           # Login validation and Firebase sign-in
@@ -39,24 +45,13 @@ CodeMentor/
 │   ├── execution.js       # Real remote C++ compilation (Wandbox API) and test verdicts
 │   ├── ai.js              # Frontend client for AI Mentor (/api/ai) and hints
 │   └── problem.js         # Lightweight compatibility bridge to workspace.js
-└── server/
-    └── server.js          # Zero-dependency Node.js HTTP server (serves frontend & protects API key)
+├── server/
+│   └── server.js          # Zero-dependency Node.js HTTP server (serves frontend, guards Ollama)
+└── scripts/
+    ├── verify-ollama.ps1  # Verifies Ollama connectivity, qwen2.5-coder:7b, and inference
+    ├── start-tunnel.ps1   # Launches Cloudflare Quick Tunnel against configured server port
+    └── start-all.ps1      # Launches Ollama verification, Node.js server, and tunnel
 ```
-
----
-
-## 🛠️ Technologies Used
-
-| Technology | Role & Purpose |
-| :--- | :--- |
-| **HTML5 & Vanilla CSS3** | Semantic markup and responsive dark UI inspired by VS Code and LeetCode. Zero heavy CSS frameworks. |
-| **Vanilla JavaScript (ES Modules)** | Pure modern JavaScript with native `import`/`export` and `async`/`await`. Zero build tools or bundle steps. |
-| **Monaco Editor** | The in-browser code editor powering VS Code. Pre-configured strictly for C++ with syntax highlighting and auto-save. |
-| **Google Firebase Authentication** | Manages user registration, secure session tokens, password hashing, and login/logout. |
-| **Cloud Firestore** | NoSQL database storing user metadata (`fullName`, `username`, `email`, `createdAt`) linked to user UID. |
-| **Wandbox Remote Sandbox** | External REST API (`wandbox.org`) that compiles and runs C++ code with GCC 14, returning real stdout, stderr, and execution time. |
-| **OpenRouter API** | Cloud AI gateway granting access to LLM models for intelligent, Socratic coding mentorship. |
-| **Node.js HTTP Server** | Lightweight backend server (built with standard `node:http`). Serves static files and keeps the OpenRouter API key hidden from the client browser. |
 
 ---
 
@@ -64,160 +59,209 @@ CodeMentor/
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                             BROWSER FRONTEND                                │
+│                           STUDENT BROWSER / DEVICE                          │
+│        (Local: http://localhost:3001  OR  Public: https://...trycloudflare.com)│
 │                                                                             │
-│   [Auth Pages]           [Protected Dashboard]       [Problem Workspace]    │
-│  • login.html           • dashboard.html            • problem.html          │
-│  • register.html          (Session Guard)            ├─ Problem Panel (26%) │
-│  • forgot-password.html                              ├─ Monaco Editor (48%) │
-│                                                      └─ AI Mentor (26%)     │
+│   [Landing / Auth]       [Protected Dashboard]       [Problem Workspace]    │
+│  • index.html           • dashboard.html            • problem.html          │
+│  • login.html             (Session Guard)            ├─ Problem Panel (26%) │
+│  • register.html                                     ├─ Monaco Editor (48%) │
+│  • forgot-password.html                              └─ AI Mentor (26%)     │
 └──────────────┬────────────────────────┬─────────────────────┬───────────────┘
                │                        │                     │
+               │ HTTPS                  │ HTTPS POST          │ HTTP / HTTPS
                ▼                        ▼                     ▼
     ┌──────────────────────┐ ┌──────────────────────┐ ┌──────────────────────┐
-    │   GOOGLE FIREBASE    │ │   WANDBOX SANDBOX    │ │   LOCAL NODE SERVER  │
-    │  • Authentication    │ │  • GCC 14 Sandbox    │ │     (server.js)      │
-    │  • Cloud Firestore   │ │  • Real stdout/err   │ │  • Serves Web App    │
-    │                      │ │  • Test Cases        │ │  • Reads .env Secret │
-    └──────────────────────┘ └──────────────────────┘ └──────────┬───────────┘
-                                                                 │
+    │   GOOGLE FIREBASE    │ │   WANDBOX SANDBOX    │ │  CLOUDFLARE TUNNEL   │
+    │  • Authentication    │ │  • GCC Head Sandbox  │ │  (cloudflared QUIC)  │
+    │  • Cloud Firestore   │ │  • Real stdout/err   │ └──────────┬───────────┘
+    └──────────────────────┘ └──────────────────────┘            │
                                                                  ▼
                                                       ┌──────────────────────┐
-                                                      │   OPENROUTER AI      │
-                                                      │  • Socratic Mentor   │
-                                                      │  • Progressive Hints │
+                                                      │  LOCAL NODE.js SERVER│
+                                                      │   (server/server.js) │
+                                                      │ • Serves Web Assets  │
+                                                      │ • /api/health Check  │
+                                                      │ • Rate Limiting & CPU│
+                                                      │   Concurrency Guard  │
+                                                      └──────────┬───────────┘
+                                                                 │ Local HTTP
+                                                                 │ (Port 11434)
+                                                                 ▼
+                                                      ┌──────────────────────┐
+                                                      │     LOCAL OLLAMA     │
+                                                      │  • qwen2.5-coder:7b  │
+                                                      │  • Keep-alive in RAM │
+                                                      │  • Socratic DSA Logic│
                                                       └──────────────────────┘
 ```
 
 ---
 
-## ⚙️ Setup & Configuration
+## ⚙️ Prerequisites & Setup
 
-### 1. Prerequisites
-- **Node.js** (v18 or higher installed).
-- A modern web browser (Chrome, Edge, Firefox, or Brave).
+### 1. Hardware & Operating System
+- **OS**: Windows 11 (64-bit).
+- **RAM**: 16 GB+ recommended (32 GB installed).
+- **CPU**: Multi-core modern processor (Intel Core Ultra 9 or similar).
 
-### 2. Configure OpenRouter AI
-1. Obtain a free API key from [OpenRouter](https://openrouter.ai/keys).
-2. Create or verify your `.env` file in the project root:
-   ```env
-   OPENROUTER_API_KEY=your_actual_openrouter_api_key_here
-   OPENROUTER_MODEL=openrouter/free
-   PORT=3000
+### 2. Required Software
+1. **Node.js**: v18+ (tested on Node.js v25). [Download Node.js](https://nodejs.org/)
+2. **Ollama**: Installed and running locally. [Download Ollama](https://ollama.ai/)
+3. **Model**: `qwen2.5-coder:7b` downloaded in Ollama:
+   ```powershell
+   ollama pull qwen2.5-coder:7b
    ```
-   *(The template `.env.example` is also provided in the repository).*
-
-### 3. Configure Firebase
-Firebase credentials are pre-configured in [`js/firebase-config.js`](js/firebase-config.js).
-If you wish to use your own Firebase project:
-1. Open the [Firebase Console](https://console.firebase.google.com/) and create a project.
-2. Enable **Email/Password** under **Authentication > Sign-in method**.
-3. Create a **Cloud Firestore Database** in test mode.
-4. Copy your Web App configuration snippet and paste it into [`js/firebase-config.js`](js/firebase-config.js):
-   ```javascript
-   export const firebaseConfig = {
-     apiKey: "YOUR_API_KEY",
-     authDomain: "YOUR_PROJECT.firebaseapp.com",
-     projectId: "YOUR_PROJECT_ID",
-     storageBucket: "YOUR_PROJECT.appspot.com",
-     messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-     appId: "YOUR_APP_ID"
-   };
+4. **Cloudflare `cloudflared`**:
+   Install via Windows Package Manager (`winget`):
+   ```powershell
+   winget install --id Cloudflare.cloudflared
    ```
+   *Or download manually from:* [Cloudflare Releases](https://github.com/cloudflare/cloudflared/releases/latest)
 
 ---
 
-## 💻 How to Run the Project Locally
+## 🔧 Environment Configuration (`.env`)
 
-Because the project uses modern ES Modules and a secure AI proxy, run it using the built-in Node.js server:
+Create or review `.env` in the project root:
 
-```bash
+```env
+# Local Ollama Server Base URL
+OLLAMA_BASE_URL=http://127.0.0.1:11434
+
+# Installed Model Name
+OLLAMA_MODEL=qwen2.5-coder:7b
+
+# Duration to keep model loaded in RAM between student interactions
+OLLAMA_KEEP_ALIVE=15m
+
+# Node.js Server Port (Configured to 3001 so it runs alongside original CodeMentor on 3000)
+PORT=3001
+```
+
+---
+
+## 🚀 Running the Project (Step-by-Step)
+
+### Step 1: Verify Ollama & Model
+In Windows PowerShell:
+```powershell
+npm run verify:ollama
+```
+*or directly:*
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\verify-ollama.ps1
+```
+This script checks:
+- Ollama service responsiveness at `http://127.0.0.1:11434`
+- Existence of `qwen2.5-coder:7b`
+- Executes a live test prompt to ensure generation works.
+
+---
+
+### Step 2: Start the CodeMentor Node.js Server
+In Windows PowerShell:
+```powershell
 npm start
 ```
-*or*
-```bash
-npm run dev
-```
-
-Then open your browser at:
+The console will confirm:
 ```text
-http://localhost:3000
+====================================================
+CodeMentor Server running at: http://localhost:3001
+AI Provider: Local Ollama (qwen2.5-coder:7b)
+Ollama API Target: http://127.0.0.1:11434
+Serving frontend from: D:\CodeMentor Local
+====================================================
 ```
 
----
-
-## ⚡ How Real C++ Execution Works
-
-1. **Monaco C++ Editor**: The student writes C++ code in the browser. Code is automatically mirrored to `localStorage` under `codementor_code_cpp` so progress is never lost on refresh.
-2. **Compilation Request**: When clicking **Run Code**, [`js/execution.js`](js/execution.js) packages the source code and any custom `stdin` into a POST request to `https://wandbox.org/api/compile.json` with compiler `gcc-head`.
-3. **Terminal Display**: The remote output is returned directly to the browser:
-   - Compilation errors (`compileError`)
-   - Runtime errors (`stderr`)
-   - Standard output (`stdout`)
-   - Execution time (`executionTime` in seconds)
-4. **Test Suite Submission**: When clicking **Submit**, [`js/execution.js`](js/execution.js) executes the code against predefined test cases for the selected problem and returns a clear verdict: `Accepted`, `Wrong Answer`, `Time Limit Exceeded`, `Compilation Error`, or `Runtime Error`.
+Verify in your browser:
+- **Homepage**: [http://localhost:3001](http://localhost:3001)
+- **Health Check**: [http://localhost:3001/api/health](http://localhost:3001/api/health)
 
 ---
 
-## 🧩 Curated DSA Problems Catalog
+### Step 3: Start Cloudflare Quick Tunnel (For Public Access)
+Open a **second PowerShell window** in the project directory and run:
+```powershell
+npm run tunnel
+```
+*or directly:*
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\start-tunnel.ps1
+```
+Cloudflare will output a public URL:
+```text
++--------------------------------------------------------------------------------------------+
+|  Your quick Tunnel has been created! Visit it at (it may take some time to be reachable):  |
+|  https://greatly-collectors-suite-script.trycloudflare.com                                 |
++--------------------------------------------------------------------------------------------+
+```
 
-CodeMentor includes three classic, universally recognized DSA interview questions covering Easy, Medium, and Hard difficulties:
+### Step 4: Share & Test From Any Device
+1. Open the `https://....trycloudflare.com` URL on your phone, tablet, or another computer.
+2. Sign in to your account.
+3. Open Problem 1 (Two Sum), write code, run it, and click **Get Hint** or send a question in the **AI Mentor** chat.
+4. The response is generated on your laptop by `qwen2.5-coder:7b` and streamed back over HTTPS.
 
-| # | Problem Title | Difficulty | Topics & Patterns | Primary Algorithmic Technique |
-| :---: | :--- | :---: | :--- | :--- |
-| **1** | **Two Sum** | `Easy` | Arrays &middot; Hash Map | Complementary hash map lookup in $O(N)$ time, $O(N)$ space. |
-| **2** | **Container With Most Water** | `Medium` | Two Pointers &middot; Array &middot; Greedy | Two-pointer inward traversal moving the shorter line in $O(N)$ time, $O(1)$ space. |
-| **3** | **Trapping Rain Water** | `Hard` | Two Pointers &middot; Dynamic Programming &middot; Stack | Two-pointer elevation boundary tracking (`left_max` and `right_max`) in $O(N)$ time, $O(1)$ space. |
+---
 
-Students can switch between problems dynamically using the toolbar dropdown in the workspace or by selecting any problem from the dashboard. Each problem maintains its own independent code state in `localStorage` and provides calibrated 5-stage progressive hints.
+## 🛡️ Security & Protection Mechanisms
+
+Since the site is accessible from the public internet via Cloudflare Tunnel, several security controls are enforced:
+
+1. **Strict Port Isolation**: Cloudflare tunnel forwards ONLY to `http://localhost:3001` (the Node.js web server). Port 11434 (Ollama) is **never** exposed to the internet.
+2. **No Arbitrary Proxying**: The Node.js server does not proxy arbitrary URLs. Only strictly formatted requests to `/api/ai` are handled.
+3. **Payload Size Guard**: Incoming POST payloads are capped at 256 KB. Oversized or abusive payloads are rejected with HTTP 413.
+4. **Concurrency Guard**: Because inference runs on the laptop CPU without a dedicated GPU, in-flight inferences are capped at 2 simultaneous requests. Additional concurrent requests receive a polite HTTP 429 rather than freezing the host machine.
+5. **Rate Limiting**: IP-based rate limiting (max 30 requests/minute) prevents flooding.
+6. **Path Traversal & Secrets Protection**: Direct requests to `.env`, `.git`, `server/`, `scripts/`, or `package.json` are rejected with HTTP 403 Forbidden.
+7. **Timeout Limits**: Ollama requests have a 90-second timeout guard with user-friendly error messages if the local CPU is under heavy load.
+8. **Safe Markdown Rendering**: All AI responses pass through HTML character entity escaping (`&`, `<`, `>`, `"`, `'`) before markdown tags are parsed, preventing stored XSS or prompt injection attacks.
 
 ---
 
 ## 💡 How Progressive AI Hints Work
 
-Standard AI chatbots output full code solutions instantly, preventing algorithmic intuition. CodeMentor introduces a **5-Stage Progressive Hint System**:
+Standard AI assistants output the full solution immediately, hurting algorithmic learning. CodeMentor enforces a **5-Stage Progressive Hint System**:
 
 - **Stage 1 (Conceptual Clue)**: Prompts the student with the fundamental question to ask.
-- **Stage 2 (Directional Guidance)**: Advises what state or values need to be tracked.
+- **Stage 2 (Directional Guidance)**: Advises what state, variables, or invariants need to be tracked.
 - **Stage 3 (Algorithm & Data Structure)**: Identifies the algorithmic pattern (e.g., hash map complementary lookup).
-- **Stage 4 (Pseudocode)**: Provides a high-level step-by-step logic structure without C++ code.
+- **Stage 4 (Pseudocode)**: Provides a high-level step-by-step logic structure without complete C++ code.
 - **Stage 5 (Near-Solution Details)**: Pinpoints edge cases, off-by-one errors, and time/space complexity.
 
 ### Difficulty Modes
 - **HARD**: Minimal, subtle clues. Will not reveal the algorithm or data structure.
 - **NORMAL**: Directional guidance showing what to think about next.
-- **EASY**: Detailed explanation with pseudocode and complexity breakdown.
+- **EASY**: Detailed explanation with algorithmic strategy and complexity breakdown.
 
 ---
 
-## 🎓 College Viva & Presentation Cheat Sheet
+## ⚠️ Important Limitations & Viva Notes
 
-Be ready to explain these six core workflows during your viva:
+Keep these operational facts in mind during your project demonstration:
 
-### 1. How a user registers and logs in
-- **Register (`register.js`)**: Real-time validation checks for 8+ chars, uppercase, number, and special character. On submission, `createUserWithEmailAndPassword(auth, email, password)` creates the user in Firebase Auth. `updateProfile()` sets the `displayName`, and `setDoc()` saves metadata (`fullName`, `username`, `email`, `createdAt`) to Firestore collection `users/{uid}`. Passwords are never saved in Firestore.
-- **Login (`login.js`)**: `signInWithEmailAndPassword(auth, email, password)` validates credentials against Firebase Auth and redirects to `dashboard.html`.
+1. **Host Laptop Must Stay Active**: The website, Node.js server, Ollama, and Cloudflare tunnel run directly on your laptop. If the laptop goes to sleep, restarts, or disconnects from Wi-Fi, the website and AI will become unreachable.
+2. **Temporary Tunnel URLs**: Free Cloudflare Quick Tunnels generate a new, random subdomain each time `cloudflared` restarts. Never hardcode temporary URLs in permanent documentation.
+3. **Local CPU Inference Speed**: Because the model runs on the Intel Core Ultra 9 CPU (no dedicated GPU), responses take approximately 4–10 seconds. This is normal and expected for local 7B-parameter LLM inference on CPU.
+4. **Starter Code Reset Isolation**: Clicking the **Reset** button restores the problem's default C++ starter template in Monaco Editor and updates `localStorage`. It **never** calls the AI model.
+5. **Separate Execution Service**: Clicking **Run Code** or **Submit** sends code to Wandbox GCC Head for real C++ compilation. It is completely independent from Ollama and does not trigger AI requests.
 
-### 2. How Firebase protects the dashboard & workspace
-- **Session Guard (`dashboard.js`, `workspace.js`)**: On page load, `onAuthStateChanged(auth, (user) => { ... })` checks for an active session. If `!user`, it immediately redirects to `login.html`. Only after authentication is verified does it fetch the Firestore profile and reveal the page.
+---
 
-### 3. How the C++ editor compiles and runs code
-- **Execution Service (`execution.js`)**: The code in Monaco is extracted via `getCppCode()` and sent via HTTPS POST to the Wandbox sandbox API (`https://wandbox.org/api/compile.json`). Wandbox compiles the code with GCC 14 on an isolated server and returns compiler errors, stdout, and execution duration.
+## 🎓 Viva Questions & Answers
 
-### 4. How the AI receives the student's current code
-- When the student asks a question or clicks "Get Hint", `workspace.js` captures:
-  1. The student's live C++ code from Monaco Editor.
-  2. The problem title and statement.
-  3. The latest terminal output and diagnostics.
-  4. The selected hint mode and level.
-  5. Recent chat history.
-- These are sent to `/api/ai`. The server embeds them into the system prompt so the AI acts as a mentor analyzing their actual logic rather than giving generic answers.
+### Q1: Why did you switch from cloud AI (OpenRouter) to local AI (Ollama)?
+> *"Cloud AI introduces recurring API costs, external rate limits, and network latency. By migrating to local Ollama with `qwen2.5-coder:7b`, CodeMentor achieves ₹0 operating cost, complete student privacy, and allows the entire platform to function offline or be hosted directly from a personal computer."*
 
-### 5. How the progressive hint system works
-- The student starts at Hint Level 1. Only **one single hint** is revealed at a time to prevent solution dumping.
-- Clicking **Next Hint** increments `currentHintLevel` (up to 5). The backend receives the current level and past hints, generating a deeper level of guidance calibrated by the selected mode (HARD, NORMAL, or EASY).
+### Q2: How does Cloudflare Quick Tunnel expose a localhost port without port forwarding?
+> *"Cloudflare Tunnel (`cloudflared`) establishes an outbound, encrypted QUIC/HTTP2 tunnel connection from the laptop to Cloudflare's nearest edge data center (e.g. Mumbai). When an external user visits the `trycloudflare.com` URL, Cloudflare's edge routes the request back through the existing outbound connection to our local Node.js port. This requires no router port forwarding, no static public IP, and no firewall inbound holes."*
 
-### 6. How the backend keeps the OpenRouter API key secret
-- If the browser contacted OpenRouter directly, the API key would be visible in browser Network tabs and source code.
-- Instead, the browser calls our local Node.js endpoint `POST /api/ai`.
-- The Node.js server reads `OPENROUTER_API_KEY` from the private `.env` file on disk. The server attaches the key in its own HTTPS request to OpenRouter and returns only the AI text to the browser.
+### Q3: Why is Ollama not exposed directly through Cloudflare Tunnel?
+> *"Ollama's API has no built-in authentication, authorization, or rate limiting. Exposing port 11434 directly would allow anyone on the internet to execute arbitrary model pulls, delete models, or exhaust the laptop's RAM and CPU. Our Node.js backend serves as a secure gateway that validates input, limits concurrency, enforces rate limits, and masks internal errors."*
+
+### Q4: How does the progressive hint system ensure students don't jump straight to the solution?
+> *"The frontend maintains the student's active hint level (1 to 5). When 'Next Hint' is clicked, the backend receives the problem context, previous hints already unlocked, and the requested level. The system prompt strictly constrains the AI to return only the single next progressive clue without repeating earlier hints or disclosing complete code solutions."*
+
+### Q5: How is C++ code execution handled?
+> *"C++ execution is completely separated from the AI. When the student clicks 'Run Code' or 'Submit', the C++ source is dispatched to Wandbox's sandbox API running GCC Head. Real compiler warnings, errors, stdout, and execution times are returned and verified against test cases."*
